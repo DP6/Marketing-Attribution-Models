@@ -8,7 +8,7 @@ import seaborn as sns
 plt.style.use('seaborn-white')
 
 
-class MAM:
+class DP6tribution:
     def __init__(
             self,
             df=None,
