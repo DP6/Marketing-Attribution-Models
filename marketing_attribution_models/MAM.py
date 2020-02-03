@@ -8,7 +8,7 @@ import seaborn as sns
 plt.style.use('seaborn-white')
 
 
-class DP6tribution:
+class MAM:
     """
     MAM (Marketing Attribution Models) is a class inspired on the R Package ‘GameTheoryAllocation’ from Alejandro Saavedra-Nieves
     and ‘ChannelAttribution’ from Davide Altomare and David Loris that was created to bring these concepts to
