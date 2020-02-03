@@ -3,3 +3,6 @@
 *~
 Pipfile
 Pipfile.lock
+dist/*
+build/*
+*.egg-info/*
