@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name='marketing_attribution_models',
-    version='1.0',
+    version='1.0.1',
     description='Metodos de atribuicao de midia',
     long_description=long_description,
     long_description_content_type="text/markdown",
