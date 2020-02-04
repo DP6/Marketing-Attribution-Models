@@ -2,10 +2,12 @@ from setuptools import setup
 
 with open("README.md", "r") as f:
     long_description = f.read()
+    # substitute relative image path by absolute ones
+    long_description = long_description.replace("readme-images/", "https://raw.githubusercontent.com/DP6/Marketing-Attribution-Models/master/readme-images/")
 
 setup(
     name='marketing_attribution_models',
-    version='1.0.2',
+    version='1.0.3',
     description='Metodos de atribuicao de midia',
     long_description=long_description,
     long_description_content_type="text/markdown",
