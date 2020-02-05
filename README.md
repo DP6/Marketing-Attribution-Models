@@ -34,7 +34,7 @@ Para resolver esse problema, utilizamos **Modelos de Atribuição**.
 - **Position Based**:
     - No modelo de atribuição Com base na posição, 40% do crédito é atribuído a cada primeira e última interação, e os 20% de crédito restantes são distribuídos uniformemente para as interações intermediárias.
 
-\\
+
 #### Modelos Probabilisticos/Algorítmicos
 
 #### **Shapley Value**
@@ -43,56 +43,55 @@ Conceito vindo da Teoria dos Jogos, para distribuir a contribuição de cada jog
 
 Atribui os créditos das conversões calculando a contribuição de cada canal presente na jornada, utilizando permutações de jornadas com e sem o canal em questão.
 
-\\
+
 **Por exemplo**, como podemos atribuir as 19 conversões na jornada abaixo?
 
-Natural Search $>$ Facebook $>$ Direto $>$ **$19** 
+Natural Search > Facebook > Direto > **$19** 
 
-\\
+
 O Shapley Value de cada canal é calculado com base em observações, isto é, para cada jornada, é preciso ter o valores de conversão para todas as combinações que a compõe. 
 
-\\
-Natural Search $>$ **\$7** \\
-Facebook $>$ **\$6** \\
-Direto $>$ **\$4** \\
-Natural Search $>$ Facebook $>$ **\$15** \\
-Natural Search $>$ Direto $>$ **\$7** \\
-Facebook $>$ Direto $>$ **\$9** \\
-Natural Search > Facebook > Direto > **\$19** 
 
-\\
+Natural Search > **$7** 
+Facebook > **$6** 
+Direto > **$4** 
+Natural Search > Facebook > **$15** 
+Natural Search > Direto > **$7** 
+Facebook > Direto > **$9** 
+Natural Search > Facebook > Direto > **$19** 
+
+
 O número de iterações aumenta exponencialmente com o número de canais: da ordem de $2^N$, sendo N o número de canais.
 
 Assim, para uma jornada com 3 canais são necessárias 8 cálculos. **Para jornadas com mais de 15 canais, se torna praticamente inviável.**
 
-\\
+
 O Shapley Value por padrão não considera a ordem dos canais,mas sim a contribuição da presença dele na jornada.
 Para levar isso em consideração é preciso aumentar a ordem do numero de combinações. 
 
-Disso vem a dificuldade em usar um método que considere a *ordem dos canais* para um grande número N, pois, além das $2^N$ interações para o cálculo do Shapley Value de um determinado canal i, **precisamos da *observação* do canal i em todas as possíveis posições.**
+Disso vem a dificuldade em usar um método que considere a *ordem dos canais* para um grande número N, pois, além das $ 2^N $ interações para o cálculo do Shapley Value de um determinado canal i, **precisamos da *observação* do canal i em todas as possíveis posições.**
 
-\\
+
 **Pontos negativos do Shapley Value**
-- Limita o número de pontos de contato uma vez que as combinações são $2^N$
+- Limita o número de pontos de contato uma vez que as combinações são $ 2^N $
 - Se não ordenado, o Shapley Value considera que a contribuição de um canal A é a mesma se antecedido por B ou por C;
 - Se ordenado, o número de combinações cresce MUITO e as jornadas devem estar disponíveis, caso contrário atribui-se zero àquela jornada;
 - Canais que estão poucos presentes ou presentes em jornadas longas vão ter pequenas contribuições;
 
-\\
+
 #### **Cadeias de Markov**
 Uma cadeia de Markov é um caso particular de processo estocástico com a propriedade de que a distribuição de probabilidade do próximo estado depende apenas do estado atual e não na sequência de eventos que o precederam.
 
-\\
+
 Utilizando cadeias de markov no contexto de atribuição multicanal, podemos calcular a probalidade de interações entre os canais de mídia por meio da **Matriz de Transição**.
 
-\\
+
 Para encontrar a contribuição de cada canal, utilizamos o **Removal Effect**: remove-se o canal em questão da jornada e calcula-se a probabilidade de conversão.
 
 A atribuição é dada pela razão entre a diferença da probabilidade total de conversão e a probabilidade de conversão sem o canal, e a probabilidade total de conversão original.
 
 Quanto maior o removal effect, maior a contribuição do canal para a conversão.
 
-\\
 
 **Os processos markovianos não possuem nenhum tipo de restrição em relação a quantidade ou ordem dos canais e
 considera a sequência de canais como uma parte fundamental do algoritmo**.
