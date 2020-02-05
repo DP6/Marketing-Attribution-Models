@@ -52,16 +52,16 @@ Natural Search > Facebook > Direto > **$19**
 O Shapley Value de cada canal é calculado com base em observações, isto é, para cada jornada, é preciso ter o valores de conversão para todas as combinações que a compõe. 
 
 
-Natural Search > **$7** 
-Facebook > **$6** 
-Direto > **$4** 
-Natural Search > Facebook > **$15** 
-Natural Search > Direto > **$7** 
-Facebook > Direto > **$9** 
-Natural Search > Facebook > Direto > **$19** 
+Natural Search > **$7** <br/>
+Facebook > **$6** <br/>
+Direto > **$4** <br/>
+Natural Search > Facebook > **$15** <br/>
+Natural Search > Direto > **$7** <br/>
+Facebook > Direto > **$9** <br/>
+Natural Search > Facebook > Direto > **$19** <br/>
 
 
-O número de iterações aumenta exponencialmente com o número de canais: da ordem de $2^N$, sendo N o número de canais.
+O número de iterações aumenta exponencialmente com o número de canais: da ordem de 2^N, sendo N o número de canais.
 
 Assim, para uma jornada com 3 canais são necessárias 8 cálculos. **Para jornadas com mais de 15 canais, se torna praticamente inviável.**
 
@@ -69,13 +69,13 @@ Assim, para uma jornada com 3 canais são necessárias 8 cálculos. **Para jorna
 O Shapley Value por padrão não considera a ordem dos canais,mas sim a contribuição da presença dele na jornada.
 Para levar isso em consideração é preciso aumentar a ordem do numero de combinações. 
 
-Disso vem a dificuldade em usar um método que considere a *ordem dos canais* para um grande número N, pois, além das $ 2^N $ interações para o cálculo do Shapley Value de um determinado canal i, **precisamos da *observação* do canal i em todas as possíveis posições.**
+Disso vem a dificuldade em usar um método que considere a *ordem dos canais* para um grande número N, pois, além das 2^N interações para o cálculo do Shapley Value de um determinado canal i, **precisamos da *observação* do canal i em todas as possíveis posições.**
 
 
 **Pontos negativos do Shapley Value**
 - Limita o número de pontos de contato uma vez que as combinações são $ 2^N $
 - Se não ordenado, o Shapley Value considera que a contribuição de um canal A é a mesma se antecedido por B ou por C;
-- Se ordenado, o número de combinações cresce MUITO e as jornadas devem estar disponíveis, caso contrário atribui-se zero àquela jornada;
+- Se ordenado, o número de combinações cresce muito e as jornadas devem estar disponíveis, caso contrário atribui-se zero àquela jornada;
 - Canais que estão poucos presentes ou presentes em jornadas longas vão ter pequenas contribuições;
 
 
