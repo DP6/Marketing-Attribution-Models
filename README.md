@@ -97,7 +97,7 @@ Quanto maior o removal effect, maior a contribuição do canal para a conversão
 considera a sequência de canais como uma parte fundamental do algoritmo**.
 
 
-## 2.2 Referências
+### 2.2 Referências
 - [Attribution Models in Marketing](https://data-science-blog.com/blog/2019/04/18/attribution-models-in-marketing/)
 - [Attribution Theory: The Two Best Models for Algorithmic Marketing Attribution – Implemented in Apache Spark and R](http://datafeedtoolbox.com/attribution-theory-the-two-best-models-for-algorithmic-marketing-attribution-implemented-in-apache-spark-and-r/)
 - [Game Theory Attribution: The Model You’ve Probably Never Heard Of](https://clearcode.cc/blog/game-theory-attribution/)
