@@ -1,83 +1,101 @@
 # Marketing Attribution Models
 
-## 1 - Sobre a Classe
-Classe em Python desenvolvida para soluções de problemas de atribuição voltadas para o marketing
+## Sobre a Classe
+Classe em Python desenvolvida para soluções de problemas de atribuição de mídia em Marketing Digital.
+
+## Sobre Atribuição Multicanal
+No contexto digital, antes de conversão, o usuário é impactado por diversos pontos de contato, podendo gerar jornadas cada vez mais longas e complexas. 
+
+*Como atribuir os créditos das conversões e otimizar o investimento em mídia online?*
+
+Para resolver esse problema, utilizamos **Modelos de Atribuição**.
 
 
-## 2 - Sobre Atribuição Multicanal
+### Tipos de Modelos
 
-### a) Tipos de Modelos
+#### Modelos Heurísticos
 
-#### Heurísticos
-
-- Last Interaction:
+- **Last Interaction**:
     - Modelo padrão de atribuição tanto do Google Analytics, quanto de ferramentas de mídia como Google Ads e Facebook Business manager;
-    - Atribui todo o resultado da conversão para o último ponto de contato;
-- Last non-Direct Click
-    - Todo o tráfego direto é ignorado, e 100% do crédito da venda vai para o último canal por meio do qual o cliente chegou ao site antes de concluir a conversão
-- First Interaction
-    - Atribui todo o resultado da conversão para o primeiro ponto de contato;
-- Linear
-    - Cada ponto de contato no caminho de conversão;
-- Time Decay
+    - Atribui todo o resultado da conversão para o último ponto de contato.
+
+- **Last non-Direct Click**:
+    - Todo o tráfego direto é ignorado, e 100% do crédito da venda vai para o último canal por meio do qual o cliente chegou ao site antes de concluir a conversão.
+
+- **First Interaction**:
+    - Atribui todo o resultado da conversão para o primeiro ponto de contato.
+
+- **Linear**:
+    - Cada ponto de contato no caminho de conversão.
+
+- **Time Decay**:
     - Os pontos de contato mais próximos em termos de tempo da venda ou conversão recebem a maior parte do crédito. 
-- Position Based
+
+- **Position Based**:
     - No modelo de atribuição Com base na posição, 40% do crédito é atribuído a cada primeira e última interação, e os 20% de crédito restantes são distribuídos uniformemente para as interações intermediárias.
 
-#### Probabilisticos
+\\
+#### Modelos Probabilisticos/Algorítmicos
 
-##### Shapley Value:
+#### **Shapley Value**
 
-Método não paramétrico, isto é, não assume nenhuma distribuição para os dados.
+Conceito vindo da Teoria dos Jogos, para distribuir a contribuição de cada jogador em um jogo de cooperação.
 
-O Shapley value por definição não considera a ordem dos canais, mas sim a contribuição da presença dele na jornada. 
+Atribui os créditos das conversões calculando a contribuição de cada canal presente na jornada, utilizando permutações de jornadas com e sem o canal em questão.
+
+\\
+**Por exemplo**, como podemos atribuir as 19 conversões na jornada abaixo?
+
+Natural Search $>$ Facebook $>$ Direto $>$ **$19** 
+
+\\
+O Shapley Value de cada canal é calculado com base em observações, isto é, para cada jornada, é preciso ter o valores de conversão para todas as combinações que a compõe. 
+
+\\
+Natural Search $>$ **\$7** \\
+Facebook $>$ **\$6** \\
+Direto $>$ **\$4** \\
+Natural Search $>$ Facebook $>$ **\$15** \\
+Natural Search $>$ Direto $>$ **\$7** \\
+Facebook $>$ Direto $>$ **\$9** \\
+Natural Search > Facebook > Direto > **\$19** 
+
+\\
+O número de iterações aumenta exponencialmente com o número de canais: da ordem de $2^N$, sendo N o número de canais.
+
+Assim, para uma jornada com 3 canais são necessárias 8 cálculos. **Para jornadas com mais de 15 canais, se torna praticamente inviável.**
+
+\\
+O Shapley Value por padrão não considera a ordem dos canais,mas sim a contribuição da presença dele na jornada.
 Para levar isso em consideração é preciso aumentar a ordem do numero de combinações. 
-Além disso, podemos calcular a contribuição de canais combinados, o que também aumenta a ordem das combinações.
 
-Exemplo de cenários possiveis:
+Disso vem a dificuldade em usar um método que considere a *ordem dos canais* para um grande número N, pois, além das $2^N$ interações para o cálculo do Shapley Value de um determinado canal i, **precisamos da *observação* do canal i em todas as possíveis posições.**
 
-Exemplo 1:
-
-- **A** > B > B > C 
-
-- B > **A** > B > C 
-
-- B > C > **A** > B
-
-- B > C > D > **A**
-
-
-
-Podemos calcular a contribuição marginal do canal **B quando *antecedido* pelo canal A**. 
-
-Diferente das cadeias de Markov, os resultados são construídos usando jornadas *existentes* e não simuladas.
-
-Disso vem a dificuldade em usar um método que considere a *ordem dos canais* para um grande número n, pois, além das $2^n$ interações para o cálculo do Shapley Value de um determinado canal i, **precisamos da *observação* do canal i em todas as possíveis posições.**
-
-
-
-
-**Contras**
-- Limita o número de pontos de contato uma vez que as combinações são $2^n$
-- Se não ordenado, o Shapley value considera que a contribuição de um canal A é a mesma se seguido por B ou por C;
-- Se ordenado, o número de combinações cresce MUITO e as jornadas devem estar disponíveis;
+\\
+**Pontos negativos do Shapley Value**
+- Limita o número de pontos de contato uma vez que as combinações são $2^N$
+- Se não ordenado, o Shapley Value considera que a contribuição de um canal A é a mesma se antecedido por B ou por C;
+- Se ordenado, o número de combinações cresce MUITO e as jornadas devem estar disponíveis, caso contrário atribui-se zero àquela jornada;
 - Canais que estão poucos presentes ou presentes em jornadas longas vão ter pequenas contribuições;
 
-#### Markov Chain:
-  - Calcula a probabilidade de transição entre canais e é possivel calcular o **efeito de remoção**;
-  - Memory free: Probabilidade de transição depende apenas do estado anterior;
-  - Mede a probabilidade de continuar no mesmo estado, no caso de mídia, a probabilidade do próximo ponto de contato ser o mesmo canal anterior;
+\\
+#### **Cadeias de Markov**
+Uma cadeia de Markov é um caso particular de processo estocástico com a propriedade de que a distribuição de probabilidade do próximo estado depende apenas do estado atual e não na sequência de eventos que o precederam.
 
+\\
+Utilizando cadeias de markov no contexto de atribuição multicanal, podemos calcular a probalidade de interações entre os canais de mídia por meio da **Matriz de Transição**.
 
-#### b) Sobre MCF Data-Driven Attribution
-- Baseado na teoria dos jogos chamada Shapley Value;
-- Utiliza os dados do relatório [Multi-Channel Funnels](https://support.google.com/analytics/answer/1191180);
-- Classificação dos canais utilizada é com base no [Default Channel Grouping](https://support.google.com/analytics/answer/6010097)
-  -  Limitação de 15 Channel Groupings, sem incluir os Default Channel Grouping;
-- Lookback Window padrão de 30 dias;
-- Número máximo de 4 interações;
-- Trafego direto que ocorreu em até 24h de uma campanha, é removido;
-- Leva em consideração a posição de impacto do canal;
+\\
+Para encontrar a contribuição de cada canal, utilizamos o **Removal Effect**: remove-se o canal em questão da jornada e calcula-se a probabilidade de conversão.
+
+A atribuição é dada pela razão entre a diferença da probabilidade total de conversão e a probabilidade de conversão sem o canal, e a probabilidade total de conversão original.
+
+Quanto maior o removal effect, maior a contribuição do canal para a conversão.
+
+\\
+
+**Os processos markovianos não possuem nenhum tipo de restrição em relação a quantidade ou ordem dos canais e
+considera a sequência de canais como uma parte fundamental do algoritmo**.
 
 
 ## Referências
