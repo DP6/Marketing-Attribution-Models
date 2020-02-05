@@ -1,9 +1,9 @@
 # Marketing Attribution Models
 
-## Sobre a Classe
+## 1. Sobre a Classe
 Classe em Python desenvolvida para soluções de problemas de atribuição de mídia em Marketing Digital.
 
-## Sobre Atribuição Multicanal
+## 2. Sobre Atribuição Multicanal
 No contexto digital, antes de conversão, o usuário é impactado por diversos pontos de contato, podendo gerar jornadas cada vez mais longas e complexas. 
 
 *Como atribuir os créditos das conversões e otimizar o investimento em mídia online?*
@@ -11,7 +11,7 @@ No contexto digital, antes de conversão, o usuário é impactado por diversos p
 Para resolver esse problema, utilizamos **Modelos de Atribuição**.
 
 
-### Tipos de Modelos
+### 2.1 Tipos de Modelos
 
 #### Modelos Heurísticos
 
@@ -35,7 +35,7 @@ Para resolver esse problema, utilizamos **Modelos de Atribuição**.
     - No modelo de atribuição Com base na posição, 40% do crédito é atribuído a cada primeira e última interação, e os 20% de crédito restantes são distribuídos uniformemente para as interações intermediárias.
 
 
-#### Modelos Probabilisticos/Algorítmicos
+#### Modelos Algorítmicos
 
 #### **Shapley Value**
 
@@ -73,7 +73,7 @@ Disso vem a dificuldade em usar um método que considere a *ordem dos canais* pa
 
 
 **Pontos negativos do Shapley Value**
-- Limita o número de pontos de contato uma vez que as combinações são $ 2^N $
+- Limita o número de pontos de contato uma vez que o número de iteração é da ordem de 2^N;
 - Se não ordenado, o Shapley Value considera que a contribuição de um canal A é a mesma se antecedido por B ou por C;
 - Se ordenado, o número de combinações cresce muito e as jornadas devem estar disponíveis, caso contrário atribui-se zero àquela jornada;
 - Canais que estão poucos presentes ou presentes em jornadas longas vão ter pequenas contribuições;
@@ -97,7 +97,7 @@ Quanto maior o removal effect, maior a contribuição do canal para a conversão
 considera a sequência de canais como uma parte fundamental do algoritmo**.
 
 
-## Referências
+## 2.2 Referências
 - [Attribution Models in Marketing](https://data-science-blog.com/blog/2019/04/18/attribution-models-in-marketing/)
 - [Attribution Theory: The Two Best Models for Algorithmic Marketing Attribution – Implemented in Apache Spark and R](http://datafeedtoolbox.com/attribution-theory-the-two-best-models-for-algorithmic-marketing-attribution-implemented-in-apache-spark-and-r/)
 - [Game Theory Attribution: The Model You’ve Probably Never Heard Of](https://clearcode.cc/blog/game-theory-attribution/)
@@ -108,7 +108,7 @@ considera a sequência de canais como uma parte fundamental do algoritmo**.
 - [ml-book/shapley](https://christophm.github.io/interpretable-ml-book/shapley.html)
 - [Overview of Attribution modeling in MCF](https://support.google.com/analytics/answer/1662518?hl=en)
 
-## 3 - Importando a Classe
+## 3. Importando a Classe
 
 
 ```python
@@ -120,7 +120,7 @@ considera a sequência de canais como uma parte fundamental do algoritmo**.
 from marketing_attribution_models import MAM
 ```
 
-## 4 - Demonstração
+## 4. Demonstração
 
 ### **Criando o objeto MAM**
 
