@@ -278,6 +278,12 @@ class MAM:
       if self.verbose:
           print(*args, **kwargs)
 
+    def df(self):
+      """
+      Return a random dataframe created for testing on random_mam_data_frame()
+      """
+      return df
+
     def as_pd_dataframe(self):
       """
       Return inputed attributes as a Pandas Data Frame on self.DataFrame
