@@ -13,51 +13,33 @@ class MAM:
     MAM (Marketing Attribution Models) is a class inspired on the R Package ‘GameTheoryAllocation’ from Alejandro Saavedra-Nieves
     and ‘ChannelAttribution’ from Davide Altomare and David Loris that was created to bring these concepts to
     Python and to help us understand how the different marketing channels behave during the customer journey.
-
     Parameters:
-
       df = None by default, but should only be None if choosing to use a random dataframe. Otherwise,
           it has to receive a Pandas dataframe;
-
       time_till_conv_colname = None by default. Column name in the df containing the time in hours untill
                               the moment of the conversion. The column must have the same elements as the
                               channels_colname has.
-
                               Values could be on a list ou a string with a separator;
-
       conversion_value = 1 by default. Integer that represents a monetary value of a 'conversion', can
                           also receive a string indicating the column name on the dataframe containing the
                           conversion values;
-
       channels_colname = None by default. Column name in the df containing the different channels during the
                         customer journey. The column must have the same elements as the time_till_conv_colname
                         has.
-
                         Values could be on a list ou a string with a separator;
-
       journey_with_conv_colname = None by default.
-
       group_channels = False by default. Most important parameter on this class. This indicates the input
                       format of the dataframe.
-
                       True = Each row represents a user session that will be grouped
                       into a user journey;
-
                       False = Each row represents a user journey and the columns
-
       group_channels_by_id_list = Empty list by default.
-
       group_timestamp_colname = None by default.
-
       create_journey_id_based_on_conversion = False by default.
-
       path_separator = ' > ' by default. If using 'group_channels = True', this should match the separator
                       being used on the inputed dataframe in the channels_colname;
-
       verbose = False by default. Internal parameter for printing while working with MAM;
-
       random_df = False by default. Will create a random dataframe with testing purpose;
-
     """
 
     def __init__(
@@ -147,7 +129,7 @@ class MAM:
           group_timestamp_colname = 'visitStartTime'
           create_journey_id_based_on_conversion = True
 
-
+        self.original_df = df.copy()
         ################################
         #### group_channels == True ####
         ################################
@@ -277,12 +259,7 @@ class MAM:
     def print(self, *args, **kwargs):
       if self.verbose:
           print(*args, **kwargs)
-
-    def df(self):
-      """
-      Return a random dataframe created for testing on random_mam_data_frame()
-      """
-      return df
+            
 
     def as_pd_dataframe(self):
       """
@@ -319,13 +296,10 @@ class MAM:
         """
         Runs all heuristic models on this class and returns a data frame.
         Models: attribution_last_click_non, attribution_first_click, attribution_linear, attribution_position_based, attribution_time_decay
-
         Parameters:
         model_type = ['all',
                      'heuristic'
                      'algorithmic']
-
-
         """
 
         if model_type == 'all':
@@ -384,15 +358,12 @@ class MAM:
 
       """
       Barplot of the results that were generated and stored on the variable self.group_by_channels_models
-
       Parameters:
       model_type = ['all',
                      'heuristic'
                      'algorithmic']
       sort_model = has to be a string and accept regex by inputing r'example'
-
       other_df = None. In case the user wants to use a new data frame
-
       """
 
       model_types = {'all':'all',
@@ -443,7 +414,6 @@ class MAM:
         channel in the journey:
           - Is equal to the selected_channel;
           - The diference between the contacts is less than the time_window selected;
-
         Parameters:
         selected_channel = channel to be overwritten;
         time_window = the time window in hours that the selected channel will be overwritten;
@@ -504,11 +474,9 @@ class MAM:
     def attribution_last_click(self, group_by_channels_models=True):
         """
         The last touchpoint receives all the credit
-
         Parameters:
         group_by_channels_models= True by default. Will aggregate the attributed results by each channel on
         self.group_by_channels_models
-
         """
         model_name = 'attribution_last_click_heuristic'
 
@@ -563,13 +531,10 @@ class MAM:
         """
         All the traffic from a Specific channel is ignored,
         and 100% of the credit for the sale goes to the last channel that the customer clicked through from before converting
-
         Parameters:
         but_not_this_channel = channel to be overwritten
-
         group_by_channels_models= True by default. Will aggregate the attributed results by each channel on
         self.group_by_channels_models
-
         """
         model_name = 'attribution_last_click_non_' + but_not_this_channel + '_heuristic'
 
@@ -627,7 +592,6 @@ class MAM:
     def attribution_first_click(self, group_by_channels_models=True):
         """
         The first touchpoint recieves all the credit
-
         Parameters:
         group_by_channels_models= True by default. Will aggregate the attributed results by each channel on
         self.group_by_channels_models
@@ -682,7 +646,6 @@ class MAM:
     def attribution_linear(self, group_by_channels_models=True):
         """
         Each touchpoint in the conversion path has an equal value
-
         Parameters:
         group_by_channels_models= True by default. Will aggregate the attributed results by each channel on
         self.group_by_channels_models
@@ -710,15 +673,12 @@ class MAM:
             0.4, 0.2, 0.4], group_by_channels_models=True):
         """
         First and last contact have preset values, middle touchpoints are evenly distributed with the chosen weight.
-
         default:
          - First channel = 0.4
          - Distributed among the middle channels = 0.2
          - Last channel = 0.4
-
         Parameters:
         list_positions_first_middle_last = list with percentages that will be given to each position
-
         group_by_channels_models= True by default. Will aggregate the attributed results by each channel on
         self.group_by_channels_models
         """
@@ -752,11 +712,9 @@ class MAM:
         """
         OBS: This function is in working progress
         Linear decay for each touchpoint further from conversion.
-
         Parameters:
         group_by_channels_models= True by default. Will aggregate the attributed results by each channel on
         self.group_by_channels_models
-
         """
         model_name = 'attribution_position_decay_heuristic'
 
@@ -802,12 +760,9 @@ class MAM:
             group_by_channels_models=True):
         """
         Decays for each touchpoint further from conversion
-
         Parameters:
         decay_over_time = percentage that will be lost by time away from the conversion
-
         frequency = The frequency in hours that the decay will happen
-
         group_by_channels_models= True by default. Will aggregate the attributed results by each channel on
         self.group_by_channels_models
         """
@@ -841,7 +796,6 @@ class MAM:
 
     def attribution_markov(self, transition_to_same_state=False, group_by_channels_models=True):
       """
-
       """
       model_name = 'attribution_markov'
       model_type = '_algorithmic'
@@ -983,7 +937,6 @@ class MAM:
       Transforms journey channels in boolean columns,
       count the number of conversions and journeys and
       compute the conversion rate of the channel combination
-
       """
       #Creating Channels DF
       df_temp = self.journey_id.copy()
@@ -1017,12 +970,9 @@ class MAM:
       """
       This function gives all the coalitions of different channels in a matrix. Most of the extra parameters
       are used when calculating Shapley's value with order.
-
       **size** = limits max size of unique channels in a single journey
-
       **unique_channels** = By default will check self.channels unique values, or a list of channels can be passed
       as well.
-
       **order** = Boolean that indicates if the order of channels matters during the process.
       """
       if unique_channels is None:
@@ -1055,23 +1005,16 @@ class MAM:
       The Shapley value is a solution concept in Cooperative Game Theory. It was named in honor of Lloyd
       Shapley, who introduced it in 1953.To each cooperative game it assigns a unique
       distribution (among the players) of a total surplus generated by the coalition of all players.
-
       Here in the context of marketing channels we can use the model to understand the valeu of the cooperation
       of channels to generate a conversion.
-
       Parameters:
-
       size = limits max size of unique channels in a single journey. If there is a journey that has more channels
       than the defined limit, the last N channels will be considered.
                 It's also important to accentuate that increasing the number of channels, increases the number calculations
                 exponentially.
-
       order = Boolean that indicates if the order of channels matters during the process.
-
       values_col = The conversion rate is used by default, but the other columns in the journey_conversion_table
       can be used as well like 'conversions', 'conversion_value'.
-
-
       group_by_channels_models = True by default. Will aggregate the attributed results by each channel on
       self.group_by_channels_models
       """
@@ -1153,3 +1096,5 @@ class MAM:
         frame = 'group_by_channels_models=False'
 
       return (conv_table, frame)
+
+
