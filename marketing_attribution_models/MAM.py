@@ -5,6 +5,7 @@ import math
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
+import warnings
 plt.style.use('seaborn-white')
 
 
@@ -815,9 +816,15 @@ class MAM:
 
           # At infinity everything converges to 0 or 1, thus we use np.trunc()
           diagonal = np.diag(np.trunc(eigen_value.real + 0.001))
-
-          return (eigen_vectors @ diagonal @
-                  np.linalg.inv(eigen_vectors)).real
+          try:
+             result = (eigen_vectors @ diagonal @ np.linalg.inv(eigen_vectors)).real
+          except np.linalg.LinAlgError as err:
+             if 'Singular matrix' in str(err):
+                  warnings.warn("Warning... Singular matrix error. Check for lines or cols fully filled with zeros")
+                  result = (eigen_vectors @ diagonal @ np.linalg.pinv(eigen_vectors)).real
+             else:
+                  raise
+          return result
 
       def normalize_rows(matrix):
           size = matrix.shape[0]
