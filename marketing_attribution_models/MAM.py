@@ -21,6 +21,8 @@ class MAM:
                               the moment of the conversion. The column must have the same elements as the
                               channels_colname has.
                               Values could be on a list ou a string with a separator;
+                              If your session is crashing here, try setting the variable time_till_conv_colname equal to 'skip_column'.
+                              But skipping this column you will not be able to run all the models in this class
       conversion_value = 1 by default. Integer that represents a monetary value of a 'conversion', can
                           also receive a string indicating the column name on the dataframe containing the
                           conversion values;
@@ -41,6 +43,9 @@ class MAM:
                       being used on the inputed dataframe in the channels_colname;
       verbose = False by default. Internal parameter for printing while working with MAM;
       random_df = False by default. Will create a random dataframe with testing purpose;
+
+      OBS: If your session is crashing, try setting the variable verbose True and some status and tips will be printed;
+
     """
 
     def __init__(
@@ -203,7 +208,9 @@ class MAM:
         #### group_channels == False ####
         #################################
         else:
+            df = df.reset_index().copy()
             self.journey_id = df[group_channels_by_id_list]
+            self.print('Status_journey_id: Done')
 
             #####################
             ### self.channels ###
@@ -211,21 +218,32 @@ class MAM:
 
             # converts channels str to list of channels
             if isinstance(df[channels_colname][0], str):
+              self.print('Status_journey_to_list: Working')
               self.channels = df[channels_colname].apply(lambda x: x.split(self.sep))
+              self.print('Status_journey_to_list: Done')
             else:
               self.channels = df[channels_colname]
+              self.print('Status_journey_to_list: Skipped')
+
+            
 
             ###########################
             ### self.time_till_conv ###
             ###########################
             if time_till_conv_colname is None:
+              self.print('If your session is crashing here, try setting the variable time_till_conv_colname equal to skip_column')
               self.time_till_conv = self.channels.apply(lambda x: list(range(len(x)))[::-1])
               self.time_till_conv = self.time_till_conv.apply(lambda x: list(np.asarray(x) * 24 ))
             else:
-              if isinstance(df[channels_colname][0], str):
-                self.time_till_conv = df[time_till_conv_colname].apply(lambda x: [float(value) for value in x.split(self.sep)])
+              if time_till_conv_colname == 'skip_column':
+                self.time_till_conv = None
+                print('Skipping this column you will not be able to run all the models in this class')
               else:
-                self.time_till_conv = df[time_till_conv_colname]
+                if isinstance(df[channels_colname][0], str):
+                  self.time_till_conv = df[time_till_conv_colname].apply(lambda x: [float(value) for value in x.split(self.sep)])
+                else:
+                  self.time_till_conv = df[time_till_conv_colname]
+            self.print('Status_time_till_conv: Done')
 
             ##############################
             ### self.journey_with_conv ###
@@ -234,6 +252,7 @@ class MAM:
                 self.journey_with_conv = self.channels.apply(lambda x: True)
             else:
               self.journey_with_conv = df[journey_with_conv_colname]
+            self.print('Status_journey_with_conv: Done')
 
         ########################
         ### conversion_value ###
@@ -270,15 +289,17 @@ class MAM:
         if isinstance(self.journey_id, pd.DataFrame):
             self.DataFrame = self.journey_id
             self.DataFrame['channels_agg'] = self.channels.apply(lambda x: self.sep.join(x))
-            self.DataFrame['time_till_conv_agg'] = self.time_till_conv.apply(lambda x : self.sep.join([str(value) for value in x]))
             self.DataFrame['converted_agg'] = self.journey_with_conv
             self.DataFrame['conversion_value'] = self.conversion_value
         else:
             self.DataFrame = pd.DataFrame({'journey_id': self.journey_id,
                                     'channels_agg': self.channels.apply(lambda x: self.sep.join(x)),
-                                    'time_till_conv_agg': self.time_till_conv.apply(lambda x : self.sep.join([str(value) for value in x])),
                                     'converted_agg': self.journey_with_conv,
                                     'conversion_value': self.conversion_value})
+        if self.time_till_conv is None:
+          self.DataFrame['time_till_conv_agg'] = None
+        else:
+          self.DataFrame['time_till_conv_agg'] = self.time_till_conv.apply(lambda x : self.sep.join([str(value) for value in x]))
 
 
       return self.DataFrame
@@ -769,28 +790,32 @@ class MAM:
         """
         model_name = 'attribution_time_decay' + str(decay_over_time) + '_freq' + str(frequency) + '_heuristic'
 
-        # Removing zeros and dividing by the frequency
-        time_till_conv_window = self.time_till_conv.apply(lambda time_till_conv:
-                                                    np.exp(math.log(decay_over_time) * np.floor(np.asarray(time_till_conv) / frequency)) /
-                                                    sum(np.exp(math.log(decay_over_time) * np.floor(np.asarray(time_till_conv) / frequency))) )
+        if self.time_till_conv is None:
+          print("time_till_conv is None, attribution_time_decay model will not work")
+
+        else:  
+          # Removing zeros and dividing by the frequency
+          time_till_conv_window = self.time_till_conv.apply(lambda time_till_conv:
+                                                      np.exp(math.log(decay_over_time) * np.floor(np.asarray(time_till_conv) / frequency)) /
+                                                      sum(np.exp(math.log(decay_over_time) * np.floor(np.asarray(time_till_conv) / frequency))) )
 
 
-        # multiplying the results with the conversion value
-        channels_value = time_till_conv_window * self.conversion_value
-        # multiplying with the boolean column that indicates if the conversion
-        # happened
-        channels_value = channels_value * self.journey_with_conv.apply(int)
-        channels_value = channels_value.apply(lambda values: values.tolist())
+          # multiplying the results with the conversion value
+          channels_value = time_till_conv_window * self.conversion_value
+          # multiplying with the boolean column that indicates if the conversion
+          # happened
+          channels_value = channels_value * self.journey_with_conv.apply(int)
+          channels_value = channels_value.apply(lambda values: values.tolist())
 
-        # Adding the results to self.DataFrame
-        self.as_pd_dataframe()
-        self.DataFrame[model_name] = channels_value.apply(lambda x : self.sep.join([str(value) for value in x]))
+          # Adding the results to self.DataFrame
+          self.as_pd_dataframe()
+          self.DataFrame[model_name] = channels_value.apply(lambda x : self.sep.join([str(value) for value in x]))
 
-        # Grouping the attributed values for each channel
-        if group_by_channels_models:
-          frame = self.group_by_results_function(channels_value, model_name)
-        else:
-          frame = 'group_by_channels_models = False'
+          # Grouping the attributed values for each channel
+          if group_by_channels_models:
+            frame = self.group_by_results_function(channels_value, model_name)
+          else:
+            frame = 'group_by_channels_models = False'
 
         return (channels_value, frame)
 
