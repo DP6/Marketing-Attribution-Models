@@ -948,16 +948,17 @@ class MAM:
 
 
       # Grouping the attributed values for each channel
+      total_conv_value = self.journey_with_conv * self.conversion_value
       if group_by_channels_models:
         if isinstance(self.group_by_channels_models, pd.DataFrame):
           frame = frame.reset_index()
           frame.columns = ['channels', model_name]
-          frame[model_name] = frame[model_name] * self.conversion_value.sum()
+          frame[model_name] = frame[model_name] * total_conv_value.sum()
           self.group_by_channels_models = pd.merge(self.group_by_channels_models, frame, how='outer', on=['channels']).fillna(0)
         else:
           frame = frame.reset_index()
           frame.columns = ['channels', model_name]
-          frame[model_name] = frame[model_name] * self.conversion_value.sum()
+          frame[model_name] = frame[model_name] * total_conv_value.sum()
           self.group_by_channels_models = frame
       else:
         frame = 'group_by_channels_models = False'
