@@ -820,7 +820,7 @@ class MAM:
         return (channels_value, frame)
 
 
-    def attribution_markov(self, transition_to_same_state=False, group_by_channels_models=True):
+    def attribution_markov(self, transition_to_same_state=False, group_by_channels_models=True, conversion_value_as_frequency = True):
       """
       """
       model_name = 'attribution_markov'
@@ -903,13 +903,21 @@ class MAM:
           #we do not hava a frequency column yet so we are using self.conversion_value.apply(lambda x: 1)
           # to count each line
           conversion_quantity = self.conversion_value.apply(lambda x: 1)
+          
       else:
+          if conversion_value_as_frequency:
+            freq_values = self.conversion_value
+          else:            
+            freq_values = self.conversion_value.apply(lambda x: 1)
+
           conversion_quantity = []
-          for a,b in zip(self.conversion_value.apply(lambda x: 1), journey_length):
+
+          for a,b in zip(freq_values, journey_length):
               conversion_quantity.extend([a] * (b-1))
 
       temp = pd.DataFrame({"orig": orig, "dest": dest, "count": conversion_quantity})
       temp = temp.groupby(["orig", "dest"], as_index=False).sum()
+      self.print(temp)
 
       if not transition_to_same_state:
           temp = temp[temp.orig != temp.dest]
