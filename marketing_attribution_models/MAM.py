@@ -43,9 +43,7 @@ class MAM:
                       being used on the inputed dataframe in the channels_colname;
       verbose = False by default. Internal parameter for printing while working with MAM;
       random_df = False by default. Will create a random dataframe with testing purpose;
-
       OBS: If your session is crashing, try setting the variable verbose True and some status and tips will be printed;
-
     """
 
     def __init__(
@@ -66,6 +64,17 @@ class MAM:
         self.verbose = verbose
         self.sep = path_separator
         self.group_by_channels_models = None
+
+        ##########################################################
+        ################## Instance attributes ###################
+        ##########################################################
+
+        self.__first_click = None
+        self.__last_click = None
+        self.__last_click_non = None
+        self.__linear = None
+        self.__position_based = None
+        self.__time_decay = None
 
         ##########################################################
         ##### Section 0: Funcions needed to create the class #####
@@ -489,6 +498,122 @@ class MAM:
       return frame
 
 
+    ##############################################
+    #
+    #
+    #  Begin of new methods
+    #
+    #
+    #################################
+
+    def first_click_journeys(self):
+      """
+      Returns an object that contains First Click results with journey granularity
+      """
+      if self.__first_click is None:
+        warnings.warn('In order to call this method, attribution_first_click method must be called first')
+      else:
+        return self.__first_click[0]
+
+    def first_click_channels(self):
+      """
+      Returns an object that contains First Click results with channel granularity
+      """
+      if self.__first_click is None:
+        warnings.warn('In order to call this method, attribution_first_click method must be called first')
+      else:
+        return self.__first_click[1]
+
+    def last_click_journeys(self):
+      """
+      Returns an object that contains Last Click results with journey granularity
+      """
+      if self.__last_click is None:
+        warnings.warn('In order to call this method, attribution_last_click method must be called first')
+      else:
+        return self.__last_click[0]
+
+    def last_click_channels(self):
+      """
+      Returns an object that contains Last Click results with channel granularity
+      """
+      if self.__last_click is None:
+        warnings.warn('In order to call this method, attribution_last_click method must be called first')
+      else:
+        return self.__last_click[1]
+
+    def last_click_non_journeys(self):
+      """
+      Returns an object that contains Last Click ignoring a specific channel results with journey granularity
+      """
+      if self.__last_click_non is None:
+        warnings.warn('In order to call this method, attribution_last_click_non method must be called first')
+      else:
+        return self.__last_click_non[0]
+
+    def last_click_non_channels(self):
+      """
+      Returns an object that contains Last Click ignoring a specific channel results with channel granularity
+      """
+      if self.__last_click_non is None:
+        warnings.warn('In order to call this method, attribution_last_click_non method must be called first')
+      else:
+        return self.__last_click_non[1]
+
+    def linear_journeys(self):
+      """
+      Returns an object that contains Linear results with journey granularity
+      """
+      if self.__linear is None:
+        warnings.warn('In order to call this method, attribution_linear method must be called first')
+      else:
+        return self.__linear[0]
+
+    def linear_channels(self):
+      """
+      Returns an object that contains Linear results with channel granularity
+      """
+      if self.__linear is None:
+        warnings.warn('In order to call this method, attribution_linear method must be called first')
+      else:
+        return self.__linear[1]
+
+    def position_based_journeys(self):
+      """
+      Returns an object that contains Position based results with journey granularity
+      """
+      if self.__position_based is None:
+        warnings.warn('In order to call this method, attribution_position_based method must be called first')
+      else:
+        return self.__position_based[0]
+
+    def position_based_channels(self):
+      """
+      Returns an object that contains Position Based results with channel granularity
+      """
+      if self.__position_based is None:
+        warnings.warn('In order to call this method, attribution_position_based method must be called first')
+      else:
+        return self.__position_based[1]
+
+    def time_decay_journeys(self):
+      """
+      Returns an object that contains Time Decay results with journey granularity
+      """
+      if self.__time_decay is None:
+        warnings.warn('In order to call this method, attribution_time_decay method must be called first')
+      else:
+        return self.__time_decay[0]
+
+    def time_decay_channels(self):
+      """
+      Returns an object that contains Time Decay results with channel granularity
+      """
+      if self.__first_click is None:
+        warnings.warn('In order to call this method, attribution_time_decay method must be called first')
+      else:
+        return self.__time_decay[1]
+
     ###################################################
     ##### Section 3: Channel Attribution methods  #####
     ###################################################
@@ -547,7 +672,9 @@ class MAM:
         else:
           frame = 'group_by_channels_models = False'
 
-        return (channels_value, frame)
+        self.__last_click = (channels_value, frame)
+
+        return self.__last_click
 
     def attribution_last_click_non(self, but_not_this_channel='Direct', group_by_channels_models=True):
         """
@@ -609,7 +736,9 @@ class MAM:
             self.group_by_channels_models = frame.reset_index()
             self.group_by_channels_models.columns = ['channels', model_name]
 
-        return (channels_value, frame)
+        self.__last_click_non = (channels_value, frame)
+        
+        return self.__last_click_non
 
     def attribution_first_click(self, group_by_channels_models=True):
         """
@@ -662,8 +791,10 @@ class MAM:
           else:
             self.group_by_channels_models = frame.reset_index()
             self.group_by_channels_models.columns = ['channels', model_name]
+          
+        self.__first_click = (channels_value, frame)
 
-        return (channels_value, frame)
+        return self.__first_click
 
     def attribution_linear(self, group_by_channels_models=True):
         """
@@ -688,7 +819,9 @@ class MAM:
         else:
           frame = 'group_by_channels_models = False'
 
-        return (channels_value, frame)
+        self.__linear = (channels_value, frame)
+        
+        return self.__linear
 
     def attribution_position_based(
         self, list_positions_first_middle_last=[
@@ -728,7 +861,9 @@ class MAM:
         else:
           frame = 'group_by_channels_models = False'
 
-        return (channels_value, frame)
+        self.__position_based = (channels_value, frame)
+
+        return self.__position_based
 
     def attribution_position_decay(self, group_by_channels_models=True):
         """
@@ -817,7 +952,9 @@ class MAM:
           else:
             frame = 'group_by_channels_models = False'
 
-        return (channels_value, frame)
+        self.__time_decay = (channels_value, frame)
+        
+        return self.__time_decay
 
 
     def attribution_markov(self, transition_to_same_state=False, group_by_channels_models=True, conversion_value_as_frequency = True):
@@ -1137,5 +1274,3 @@ class MAM:
         frame = 'group_by_channels_models=False'
 
       return (conv_table, frame)
-
-
