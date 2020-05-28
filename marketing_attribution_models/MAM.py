@@ -145,6 +145,7 @@ class MAM:
           create_journey_id_based_on_conversion = True
 
         self.original_df = df.copy()
+        
         ################################
         #### group_channels == True ####
         ################################
