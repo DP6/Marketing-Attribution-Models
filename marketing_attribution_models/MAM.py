@@ -145,7 +145,7 @@ class MAM:
           create_journey_id_based_on_conversion = True
 
         self.original_df = df.copy()
-        
+
         ################################
         #### group_channels == True ####
         ################################
@@ -166,6 +166,7 @@ class MAM:
 
           # Grouping channels based on group_channels_by_id_list
           ######################################################
+          
           self.print('group_channels == True')
           self.print('Grouping channels...')
           temp_channels = df.groupby(group_channels_by_id_list)[
