@@ -161,57 +161,62 @@ class MAM:
             df = journey_id_based_on_conversion(df = df,
                                                 group_id = group_channels_by_id_list,
                                                 transaction_colname = journey_with_conv_colname)
-
             group_channels_by_id_list = ['journey_id']
 
-            # Grouping channels based on group_channels_by_id_list
-            ######################################################
-            self.print('group_channels == True')
-            self.print('Grouping channels...')
-            temp_channels = df.groupby(group_channels_by_id_list)[
-                channels_colname].apply(list).reset_index()
-            self.channels = temp_channels[channels_colname]
-            self.print('Status: Done')
+          # Grouping channels based on group_channels_by_id_list
+          ######################################################
+          self.print('group_channels == True')
+          self.print('Grouping channels...')
+          temp_channels = df.groupby(group_channels_by_id_list)[
+              channels_colname].apply(list).reset_index()
+          self.channels = temp_channels[channels_colname]
+          self.print('Status: Done')
 
-            # Grouping timestamp based on group_channels_by_id_list
-            ####################################################
-            self.print('Grouping timestamp...')
-            df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
-            df_temp = df_temp.merge(
-                df.groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
-                on=group_channels_by_id_list)
+          # Grouping timestamp based on group_channels_by_id_list
+          ####################################################
+          self.print('Grouping timestamp...')
+          df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
+          df_temp = df_temp.merge(
+              df.groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
+              on=group_channels_by_id_list)
 
-            # calculating the time till conversion
-            ######################################
-            df_temp['time_till_conv'] = (df_temp[group_timestamp_colname + '_y'] -
-                                         df_temp[group_timestamp_colname + '_x']).astype('timedelta64[h]')
+          # calculating the time till conversion
+          ######################################
+          df_temp['time_till_conv'] = (df_temp[group_timestamp_colname + '_y'] -
+                                        df_temp[group_timestamp_colname + '_x']).astype('timedelta64[h]')
 
-            df_temp = df_temp.groupby(group_channels_by_id_list)[
-                'time_till_conv'].apply(list).reset_index()
-            self.time_till_conv = df_temp['time_till_conv']
-            self.print('Status: Done')
+          df_temp = df_temp.groupby(group_channels_by_id_list)[
+              'time_till_conv'].apply(list).reset_index()
+          self.time_till_conv = df_temp['time_till_conv']
+          self.print('Status: Done')
 
-            if journey_with_conv_colname is None:
+          if journey_with_conv_colname is None:
 
-                # If journey_with_conv_colname is None, we will assume that
-                # all journeys ended in a conversion
-                ###########################################################
-                self.journey_with_conv = self.channels.apply(lambda x: True)
-                self.journey_id = pd.Series(df[group_channels_by_id_list].unique())
+              # If journey_with_conv_colname is None, we will assume that
+              # all journeys ended in a conversion
+              ###########################################################
+              self.journey_with_conv = self.channels.apply(lambda x: True)
+              self.journey_id = pd.Series(df[group_channels_by_id_list].unique())
 
-            else:
-                # Grouping unique journeys and whether the journey ended with a
-                # conversion
-                ##########################################################
-                self.print('Grouping journey_id and journey_with_conv...')
-                df_temp = df[group_channels_by_id_list +
-                             [journey_with_conv_colname]]
-                temp_journey_id_conv = df_temp.groupby(group_channels_by_id_list)[
-                    journey_with_conv_colname].max().reset_index()
-                self.journey_id = temp_journey_id_conv[group_channels_by_id_list]
-                self.print('Status: Done')
-                self.journey_with_conv = temp_journey_id_conv[journey_with_conv_colname]
-                self.print('Status: Done')
+          else:
+              # Grouping unique journeys and whether the journey ended with a
+              # conversion
+              ##########################################################
+              self.print('Grouping journey_id and journey_with_conv...')
+              df_temp = df[group_channels_by_id_list +
+                            [journey_with_conv_colname]]
+              temp_journey_id_conv = df_temp.groupby(group_channels_by_id_list)[
+                  journey_with_conv_colname].max().reset_index()
+              self.journey_id = temp_journey_id_conv[group_channels_by_id_list]
+              self.print('Status: Done')
+              self.journey_with_conv = temp_journey_id_conv[journey_with_conv_colname]
+              self.print('Status: Done')
+
+          # conversion_value could be a single int value or a panda series
+          if isinstance(conversion_value, int):
+            self.conversion_value = self.journey_with_conv.apply(lambda valor: conversion_value if valor else 0)
+          else:
+            self.conversion_value = df.groupby(group_channels_by_id_list)[conversion_value].sum().reset_index()[conversion_value]
 
         #################################
         #### group_channels == False ####
@@ -263,15 +268,15 @@ class MAM:
               self.journey_with_conv = df[journey_with_conv_colname]
             self.print('Status_journey_with_conv: Done')
 
-        ########################
-        ### conversion_value ###
-        ########################
+            ########################
+            ### conversion_value ###
+            ########################
 
-        # conversion_value could be a single int value or a panda series
-        if isinstance(conversion_value, int):
-          self.conversion_value = self.journey_with_conv.apply(lambda valor: conversion_value if valor else 0)
-        else:
-          self.conversion_value = df[conversion_value]
+            # conversion_value could be a single int value or a panda series
+            if isinstance(conversion_value, int):
+              self.conversion_value = self.journey_with_conv.apply(lambda valor: conversion_value if valor else 0)
+            else:
+              self.conversion_value = df[conversion_value]
 
         #################
         ### DataFrame ###
