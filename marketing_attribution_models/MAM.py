@@ -30,7 +30,7 @@ class MAM:
                         customer journey. The column must have the same elements as the time_till_conv_colname
                         has.
                         Values could be on a list ou a string with a separator;
-      journey_with_conv_colname = None by default.
+      journey_with_conv_colname = None by default. Column name in the df indicating if the journey (row) was a successfully conversion (True), or not (False).
       group_channels = False by default. Most important parameter on this class. This indicates the input
                       format of the dataframe.
                       True = Each row represents a user session that will be grouped
