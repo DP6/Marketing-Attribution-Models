@@ -1184,7 +1184,12 @@ class MAM:
 
       return df_temp
 
-    def attribution_shapley(self, size=4, order=False, values_col='conv_rate', group_by_channels_models = True):
+    def attribution_shapley(self, 
+                            size=4, 
+                            order=False, 
+                            values_col='conv_rate',
+                            merge_custom_values = None,
+                            group_by_channels_models = True):
       """
       Defined by Wikipedia:
       The Shapley value is a solution concept in Cooperative Game Theory. It was named in honor of Lloyd
@@ -1200,12 +1205,30 @@ class MAM:
       order = Boolean that indicates if the order of channels matters during the process.
       values_col = The conversion rate is used by default, but the other columns in the journey_conversion_table
       can be used as well like 'conversions', 'conversion_value'.
+      merge_custom_values = None by defaut. Can be passed a Pandas Data Frame with two columns only, 
+                            the first one representing the channels combination and the secong the custom value that you want to apply as the values_col.
+                            Will be merged(Left Join) with grouped self.journey_conversion_table() and applied a .fillna().
       group_by_channels_models = True by default. Will aggregate the attributed results by each channel on
       self.group_by_channels_models
       """
 
       # Creating conv_table that will contain the aggregated results based on the journeys
       conv_table = self.journey_conversion_table(order=order, size=size)
+
+      # Merge merge_custom_values
+      if merge_custom_values is not None:
+        if not isinstance(merge_custom_values, pd.DataFrame):
+          print("Warning: variable merge_custom_values has to be a Pandas DataFrame containing two columns representing the channels combination and his conv value.")
+        else:
+          try:
+            merge_custom_values.columns = ['combinations', 'custom_value']
+          except:
+            print('merge_custom_values must have two columns only, the first one representing the channels combination and the secong the custom value that you want to apply...')
+
+          conv_table = pd.merge(conv_table, merge_custom_values, on='combinations', how='left').fillna(0)
+          values_col = 'custom_value'
+
+
       # Removing all jouneys that have not converted
       conv_table = conv_table[conv_table.conversions > 0]
       channels_shapley = conv_table.combinations.apply(lambda x: x.split(self.sep)).copy()
@@ -1220,7 +1243,7 @@ class MAM:
         coalitions.combinations = coalitions.combinations.apply(lambda x: self.sep.join(x))
         coa = coalitions[1:].drop('combinations',axis = 1).astype(int).astype(float).reset_index(drop=True)
 
-
+        # Merging the coalitions table with the grouped results on conv_table
         valores = pd.merge(coalitions, conv_table, on='combinations', how='left')[values_col].fillna(0).values
 
 
