@@ -814,7 +814,7 @@ class MAM:
 
         channels_count = self.channels.apply(lambda x: len(x))
         channels_value = (self.conversion_value * self.journey_with_conv.apply(int) /
-                                                  channels_count).apply(lambda x: [round(x, 2)]) * channels_count
+                                                  channels_count).apply(lambda x: [x]) * channels_count
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
@@ -1272,7 +1272,7 @@ class MAM:
         model_name = model_name + model_type
 
 
-      if values_col == 'conv_rate':
+      if (values_col == 'conv_rate') or (values_col == 'custom_value'):
         conv_table[model_name] = results
         conv_table[model_name] = conv_table[model_name].apply(lambda x: np.asarray(x)) * conv_table['total_sequences']
         conv_table[model_name] = conv_table[model_name].apply(lambda x: x / x.sum() ) * conv_table['conversion_value']
