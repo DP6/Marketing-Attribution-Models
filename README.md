@@ -164,19 +164,109 @@ After the Object MAM is created, we can check out our database now with the addi
 ```python
 attributions.DataFrame
 ```
-|  | journey_id | channels_agg | time_till_conv_agg | converted_agg | conversion_value |
-| - | - | - | - | - | - |
-| 0 | id:0_J:0 | Facebook | 0.0 | True | 1 |
-| 1 | id:0_J:1 | Google Search | 0.0 | True | 1 |
-| 2 | id:0_J:10 | Google Search > Organic > Email Marketing | 72.0 > 24.0 > 0.0 | True | 1 |
-| 3 | id:0_J:11 | Organic | 0.0 | True | 1 |
-| 4 | id:0_J:12 | Email Marketing > Facebook | 432.0 > 0.0 | True | 1 |
-| ... | ... | ... | ... | ... | ... |
-| 20341 | id:9_J:5 | Direct > Facebook | 120.0 > 0.0 | True | 1 |
-| 20342 | id:9_J:6 | Google Search > Google Search > Google Search | 48.0 > 24.0 > 0.0 | True | 1 |
-| 20343 | id:9_J:7 | Organic > Organic > Google Search > Google Search | 480.0 > 480.0 > 288.0 > 0.0 | True | 1 |
-| 20344 | id:9_J:8 | Direct > Organic | 168.0 > 0.0 | True | 1 |
-| 20345 | id:9_J:9 | Google Search > Organic > Google Search > Emai... | 528.0 > 528.0 > 408.0 > 240.0 > 0.0 | True | 1 |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>journey_id</th>
+      <th>channels_agg</th>
+      <th>time_till_conv_agg</th>
+      <th>converted_agg</th>
+      <th>conversion_value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>id:0_J:0</td>
+      <td>Facebook</td>
+      <td>0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>id:0_J:1</td>
+      <td>Google Search</td>
+      <td>0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>id:0_J:10</td>
+      <td>Google Search &gt; Organic &gt; Email Marketing</td>
+      <td>72.0 &gt; 24.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>id:0_J:11</td>
+      <td>Organic</td>
+      <td>0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>id:0_J:12</td>
+      <td>Email Marketing &gt; Facebook</td>
+      <td>432.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <td>20341</td>
+      <td>id:9_J:5</td>
+      <td>Direct &gt; Facebook</td>
+      <td>120.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20342</td>
+      <td>id:9_J:6</td>
+      <td>Google Search &gt; Google Search &gt; Google Search</td>
+      <td>48.0 &gt; 24.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20343</td>
+      <td>id:9_J:7</td>
+      <td>Organic &gt; Organic &gt; Google Search &gt; Google Search</td>
+      <td>480.0 &gt; 480.0 &gt; 288.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20344</td>
+      <td>id:9_J:8</td>
+      <td>Direct &gt; Organic</td>
+      <td>168.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20345</td>
+      <td>id:9_J:9</td>
+      <td>Google Search &gt; Organic &gt; Google Search &gt; Emai...</td>
+      <td>528.0 &gt; 528.0 &gt; 408.0 &gt; 240.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+
 
 This attribute is **updated** for **every attribution model** generated. Only in the case of heuristic models, a new column is appended containing the attribution value given by said model.
 
@@ -187,19 +277,109 @@ attributions.attribution_last_click()
 attributions.DataFrame
 ```
 
-| | journey_id | channels_agg | time_till_conv_agg | converted_agg | conversion_value |
-| - | - | - | - | - | - |
-| 0 | id:0_J:0 | Facebook | 0.0 | True | 1 |
-| 1 | id:0_J:1 | Google Search | 0.0 | True | 1 |
-| 2 | id:0_J:10 | Google Search > Organic > Email Marketing | 72.0 > 24.0 > 0.0 | True | 1 |
-| 3 | id:0_J:11 | Organic | 0.0 | True | 1 |
-| 4 | id:0_J:12 | Email Marketing > Facebook | 432.0 > 0.0 | True | 1 |
-| ... | ... | ... | ... | ... | ... |
-| 20341 | id:9_J:5 | Direct > Facebook | 120.0 > 0.0 | True | 1 |
-| 20342 | id:9_J:6 | Google Search > Google Search > Google Search | 48.0 > 24.0 > 0.0 | True | 1 |
-| 20343 | id:9_J:7 | Organic > Organic > Google Search > Google Search | 480.0 > 480.0 > 288.0 > 0.0 | True | 1 |
-| 20344 | id:9_J:8 | Direct > Organic | 168.0 > 0.0 | True | 1 |
-| 20345 | id:9_J:9 | Google Search > Organic > Google Search > Emai... | 528.0 > 528.0 > 408.0 > 240.0 > 0.0 | True | 1 |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>journey_id</th>
+      <th>channels_agg</th>
+      <th>time_till_conv_agg</th>
+      <th>converted_agg</th>
+      <th>conversion_value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>id:0_J:0</td>
+      <td>Facebook</td>
+      <td>0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>id:0_J:1</td>
+      <td>Google Search</td>
+      <td>0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>id:0_J:10</td>
+      <td>Google Search &gt; Organic &gt; Email Marketing</td>
+      <td>72.0 &gt; 24.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>id:0_J:11</td>
+      <td>Organic</td>
+      <td>0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>id:0_J:12</td>
+      <td>Email Marketing &gt; Facebook</td>
+      <td>432.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <td>20341</td>
+      <td>id:9_J:5</td>
+      <td>Direct &gt; Facebook</td>
+      <td>120.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20342</td>
+      <td>id:9_J:6</td>
+      <td>Google Search &gt; Google Search &gt; Google Search</td>
+      <td>48.0 &gt; 24.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20343</td>
+      <td>id:9_J:7</td>
+      <td>Organic &gt; Organic &gt; Google Search &gt; Google Search</td>
+      <td>480.0 &gt; 480.0 &gt; 288.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20344</td>
+      <td>id:9_J:8</td>
+      <td>Direct &gt; Organic</td>
+      <td>168.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>20345</td>
+      <td>id:9_J:9</td>
+      <td>Google Search &gt; Organic &gt; Google Search &gt; Emai...</td>
+      <td>528.0 &gt; 528.0 &gt; 408.0 &gt; 240.0 &gt; 0.0</td>
+      <td>True</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+
 
 Usually the volume of data worked with is extensive, so it is impractical or even impossible to analyse results attributed to **each** journey with transaction. With the attribute ***group_by_channels_models***, however, all results can be seen grouped by channel.
 
@@ -209,16 +389,49 @@ Usually the volume of data worked with is extensive, so it is impractical or eve
 attributions.group_by_channels_models
 ```
 
-| channels | attribution_last_click_heuristic |
-| -- | -- |
-| Direct | 2133 |
-| Email Marketing | 1033 |
-| Facebook | 3168 |
-| Google Display | 1073 |
-| Google Search | 4255 |
-| Instagram | 1028 |
-| Organic | 6322 |
-| Youtube | 1093 |
+<table>
+  <thead>
+    <tr>
+      <th>channels</th>
+      <th>attribution_last_click_heuristic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Direct</td>
+      <td>2133</td>
+    </tr>
+    <tr>
+      <td>Email Marketing</td>
+      <td>1033</td>
+    </tr>
+    <tr>
+      <td>Facebook</td>
+      <td>3168</td>
+    </tr>
+    <tr>
+      <td>Google Display</td>
+      <td>1073</td>
+    </tr>
+    <tr>
+      <td>Google Search</td>
+      <td>4255</td>
+    </tr>
+    <tr>
+      <td>Instagram</td>
+      <td>1028</td>
+    </tr>
+    <tr>
+      <td>Organic</td>
+      <td>6322</td>
+    </tr>
+    <tr>
+      <td>Youtube</td>
+      <td>1093</td>
+    </tr>
+  </tbody>
+</table>
+
 
 As with the *.DataFrame* attribute, *group_by_channels_models* is also updated for every model used **without the limitation** of not displaying algorithmic results.
 
@@ -227,16 +440,67 @@ attributions.attribution_shapley()
 attributions.group_by_channels_models
 ```
 
-| | channels | attribution_last_click_heuristic | attribution_shapley_size4_conv_rate_algorithmic |
-| - | - | - | - |
-| 0 | Direct | 109 | 74.926849 |
-| 1 | Email Marketing | 54 | 70.558428 |
-| 2 | Facebook | 160 | 160.628945 |
-| 3 | Google Display | 65 | 110.649352 |
-| 4 | Google Search | 193 | 202.179519 |
-| 5 | Instagram | 64 | 72.982433 |
-| 6 | Organic | 315 | 265.768549 |
-| 7 | Youtube | 58 | 60.305925 |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>channels</th>
+      <th>attribution_last_click_heuristic</th>
+      <th>attribution_shapley_size4_conv_rate_algorithmic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>109</td>
+      <td>74.926849</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Email Marketing</td>
+      <td>54</td>
+      <td>70.558428</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Facebook</td>
+      <td>160</td>
+      <td>160.628945</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Google Display</td>
+      <td>65</td>
+      <td>110.649352</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Google Search</td>
+      <td>193</td>
+      <td>202.179519</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Instagram</td>
+      <td>64</td>
+      <td>72.982433</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Organic</td>
+      <td>315</td>
+      <td>265.768549</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Youtube</td>
+      <td>58</td>
+      <td>60.305925</td>
+    </tr>
+  </tbody>
+</table>
+
 
 ### About the Models
 
@@ -253,6 +517,7 @@ The **first** Series of the tuple are the results in a **journey granularity**, 
 attribution_first_click[0]
 ```
 
+```
     0                          [1, 0, 0, 0, 0]
     1                                      [1]
     2              [1, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -265,6 +530,7 @@ attribution_first_click[0]
     20515                            [1, 0, 0]
     20516                         [1, 0, 0, 0]
     Length: 20517, dtype: object
+```
 
 The **second** one contains the results with a **channel granularity**, as seen in the **.group_by_channels_models** attribute.    
 
@@ -272,16 +538,58 @@ The **second** one contains the results with a **channel granularity**, as seen 
 attribution_first_click[1]
 ```
 
-|  | channels | attribution_first_click_heuristic |
-| - | - | - |
-| 0 | Direct | 2078 |
-| 1 | Email Marketing | 1095 |
-| 2 | Facebook | 3177 |
-| 3 | Google Display | 1066 |
-| 4 | Google Search | 4259 |
-| 5 | Instagram | 1007 |
-| 6 | Organic | 6361 |
-| 7 | Youtube | 1062 |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>channels</th>
+      <th>attribution_first_click_heuristic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>2078</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Email Marketing</td>
+      <td>1095</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Facebook</td>
+      <td>3177</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Google Display</td>
+      <td>1066</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Google Search</td>
+      <td>4259</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Instagram</td>
+      <td>1007</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Organic</td>
+      <td>6361</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Youtube</td>
+      <td>1062</td>
+    </tr>
+  </tbody>
+</table>
+
 
 #### Customizing Models
 
@@ -297,16 +605,56 @@ If unspecified, the parameter *but_not_this_channel* is set to *'Direct'*, but i
 attributions.attribution_last_click_non(but_not_this_channel='Direct')[1]
 ```
 
-| channels | attribution_last_click_non_Direct_heuristic |
-| - | - | - |
-| 0 | Direct | 11 |
-| 1 | Email Marketing | 60 |
-| 2 | Facebook | 172 |
-| 3 | Google Display | 69 |
-| 4 | Google Search | 224 |
-| 5 | Instagram | 67 |
-| 6 | Organic | 350 |
-| 7 | Youtube | 65 |
+<table>
+  <thead>
+    <tr>
+      <th>channels</th>
+      <th>attribution_last_click_non_Direct_heuristic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>11</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Email Marketing</td>
+      <td>60</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Facebook</td>
+      <td>172</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Google Display</td>
+      <td>69</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Google Search</td>
+      <td>224</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Instagram</td>
+      <td>67</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Organic</td>
+      <td>350</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Youtube</td>
+      <td>65</td>
+    </tr>
+  </tbody>
+</table>
 
 ##### Position Based Model 
 
@@ -316,16 +664,58 @@ This model has a parameter *list_positions_first_middle_last* in which the weigh
 attributions.attribution_position_based(list_positions_first_middle_last=[0.3, 0.3, 0.4])[1]
 ```
 
-|  | channels | attribution_position_based_0.3_0.3_0.4_heuristic |
-| - | - | - |
-| 0 | Direct | 95.685085 |
-| 1 | Email Marketing | 57.617191 |
-| 2 | Facebook | 145.817501 |
-| 3 | Google Display | 56.340693 |
-| 4 | Google Search | 193.282305 |
-| 5 | Instagram | 54.678557 |
-| 6 | Organic | 288.148896 |
-| 7 | Youtube | 55.629772 |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>channels</th>
+      <th>attribution_position_based_0.3_0.3_0.4_heuristic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>95.685085</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Email Marketing</td>
+      <td>57.617191</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Facebook</td>
+      <td>145.817501</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Google Display</td>
+      <td>56.340693</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Google Search</td>
+      <td>193.282305</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Instagram</td>
+      <td>54.678557</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Organic</td>
+      <td>288.148896</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Youtube</td>
+      <td>55.629772</td>
+    </tr>
+  </tbody>
+</table>
+
 
 ##### **Time Decay Model** 
 
@@ -348,16 +738,58 @@ attributions.attribution_time_decay(
     frequency=7)[1]
 ```
 
-|  | channels | attribution_time_decay0.6_freq7_heuristic |
-| - | - | - |
-| 0 | Direct | 108.679538 |
-| 1 | Email Marketing | 54.425914 |
-| 2 | Facebook | 159.592216 |
-| 3 | Google Display | 64.350107 |
-| 4 | Google Search | 192.838884 |
-| 5 | Instagram | 64.611414 |
-| 6 | Organic | 314.920082 |
-| 7 | Youtube | 58.581845 |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>channels</th>
+      <th>attribution_time_decay0.6_freq7_heuristic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>108.679538</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Email Marketing</td>
+      <td>54.425914</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Facebook</td>
+      <td>159.592216</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Google Display</td>
+      <td>64.350107</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Google Search</td>
+      <td>192.838884</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Instagram</td>
+      <td>64.611414</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Organic</td>
+      <td>314.920082</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Youtube</td>
+      <td>58.581845</td>
+    </tr>
+  </tbody>
+</table>
+
 
 ##### Markov Chains
 
@@ -369,16 +801,58 @@ To start off, it is possible to indicate if same **state transitions** are consi
 attribution_markov = attributions.attribution_markov(transition_to_same_state=False)
 ```
 
-|  | channels | attribution_markov_algorithmic |
-| - | - | - |
-| 0 | Direct | 2305.324362 |
-| 1 | Email Marketing | 1237.400774 |
-| 2 | Facebook | 3273.918832 |
-| 3 | Youtube | 1231.183938 |
-| 4 | Google Search | 4035.260685 |
-| 5 | Instagram | 1205.949095 |
-| 6 | Organic | 5358.270644 |
-| 7 | Google Display | 1213.691671 |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>channels</th>
+      <th>attribution_markov_algorithmic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>2305.324362</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Email Marketing</td>
+      <td>1237.400774</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Facebook</td>
+      <td>3273.918832</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Youtube</td>
+      <td>1231.183938</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Google Search</td>
+      <td>4035.260685</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td>Instagram</td>
+      <td>1205.949095</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td>Organic</td>
+      <td>5358.270644</td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td>Google Display</td>
+      <td>1213.691671</td>
+    </tr>
+  </tbody>
+</table>
+
 
 This configuration **does not affect** the overall attributed results for each channel, but the values observed in the **transition matrix**. Because we set *transition_to_same_state* to **False**, the diagonal, indicating states transitioning to themselves, is nulled.
 
@@ -410,19 +884,121 @@ The calculation method of marginal contributions of each channel can vary with t
 attributions.attribution_shapley(size=4, order=True, values_col='conv_rate')[0]
 ```
 
-|  | combinations | conversions | total_sequences | conversion_value | conv_rate | attribution_shapley_size4_conv_rate_order_algorithmic |
-| - | - | - | - | - | - | - |
-| 0 | Direct | 909 | 926 | 909 | 0.981641 | [909.0] |
-| 1 | Direct > Email Marketing | 27 | 28 | 27 | 0.964286 | [13.948270234099155, 13.051729765900845] |
-| 2 | Direct > Email Marketing > Facebook | 5 | 5 | 5 | 1.000000 | [1.6636366232390172, 1.5835883671498818, 1.752... |
-| 3 | Direct > Email Marketing > Facebook > Google D... | 1 | 1 | 1 | 1.000000 | [0.2563402919193473, 0.2345560799963515, 0.259... |
-| 4 | Direct > Email Marketing > Facebook > Google S... | 1 | 1 | 1 | 1.000000 | [0.2522517802130265, 0.2401286956930936, 0.255... |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1278 | Youtube > Organic > Google Search > Google Dis... | 1 | 2 | 1 | 0.500000 | [0.2514214624662836, 0.24872101523605275, 0.24... |
-| 1279 | Youtube > Organic > Google Search > Instagram | 1 | 1 | 1 | 1.000000 | [0.2544401477637237, 0.2541071889956603, 0.253... |
-| 1280 | Youtube > Organic > Instagram | 4 | 4 | 4 | 1.000000 | [1.2757196742326997, 1.4712839059493295, 1.252... |
-| 1281 | Youtube > Organic > Instagram > Facebook | 1 | 1 | 1 | 1.000000 | [0.2357631944623868, 0.2610913781266248, 0.247... |
-| 1282 | Youtube > Organic > Instagram > Google Search | 3 | 3 | 3 | 1.000000 | [0.7223482210689489, 0.7769049003203142, 0.726... |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>combinations</th>
+      <th>conversions</th>
+      <th>total_sequences</th>
+      <th>conversion_value</th>
+      <th>conv_rate</th>
+      <th>attribution_shapley_size4_conv_rate_order_algorithmic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>909</td>
+      <td>926</td>
+      <td>909</td>
+      <td>0.981641</td>
+      <td>[909.0]</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Direct &gt; Email Marketing</td>
+      <td>27</td>
+      <td>28</td>
+      <td>27</td>
+      <td>0.964286</td>
+      <td>[13.948270234099155, 13.051729765900845]</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Direct &gt; Email Marketing &gt; Facebook</td>
+      <td>5</td>
+      <td>5</td>
+      <td>5</td>
+      <td>1.000000</td>
+      <td>[1.6636366232390172, 1.5835883671498818, 1.752...</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Direct &gt; Email Marketing &gt; Facebook &gt; Google D...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1.000000</td>
+      <td>[0.2563402919193473, 0.2345560799963515, 0.259...</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Direct &gt; Email Marketing &gt; Facebook &gt; Google S...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1.000000</td>
+      <td>[0.2522517802130265, 0.2401286956930936, 0.255...</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <td>1278</td>
+      <td>Youtube &gt; Organic &gt; Google Search &gt; Google Dis...</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>0.500000</td>
+      <td>[0.2514214624662836, 0.24872101523605275, 0.24...</td>
+    </tr>
+    <tr>
+      <td>1279</td>
+      <td>Youtube &gt; Organic &gt; Google Search &gt; Instagram</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1.000000</td>
+      <td>[0.2544401477637237, 0.2541071889956603, 0.253...</td>
+    </tr>
+    <tr>
+      <td>1280</td>
+      <td>Youtube &gt; Organic &gt; Instagram</td>
+      <td>4</td>
+      <td>4</td>
+      <td>4</td>
+      <td>1.000000</td>
+      <td>[1.2757196742326997, 1.4712839059493295, 1.252...</td>
+    </tr>
+    <tr>
+      <td>1281</td>
+      <td>Youtube &gt; Organic &gt; Instagram &gt; Facebook</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+      <td>1.000000</td>
+      <td>[0.2357631944623868, 0.2610913781266248, 0.247...</td>
+    </tr>
+    <tr>
+      <td>1282</td>
+      <td>Youtube &gt; Organic &gt; Instagram &gt; Google Search</td>
+      <td>3</td>
+      <td>3</td>
+      <td>3</td>
+      <td>1.000000</td>
+      <td>[0.7223482210689489, 0.7769049003203142, 0.726...</td>
+    </tr>
+  </tbody>
+</table>
+
 
 Finally, the parameter indicating what metric is used to calculate the Shapley Value is **values_col**, which by default is set to *conversion rate*. In doing so, journeys **without conversions** are taken into acount. 
 
@@ -432,19 +1008,121 @@ It is possible, however, to consider only **literal conversions** when using the
 attributions.attribution_shapley(size=3, order=False, values_col='conversions')[0]
 ```
 
-|  | combinations | conversions | total_sequences | conversion_value | conv_rate | attribution_shapley_size3_conversions_algorithmic |
-| - | - | - | - | - | - | - |
-| 0 | Direct | 11 | 18 | 18 | 0.611111 | [11.0] |
-| 1 | Direct > Email Marketing | 4 | 5 | 5 | 0.800000 | [2.0, 2.0] |
-| 2 | Direct > Email Marketing > Google Search | 1 | 2 | 2 | 0.500000 | [-3.1666666666666665, -7.666666666666666, 11.8... |
-| 3 | Direct > Email Marketing > Organic | 4 | 6 | 6 | 0.666667 | [-7.833333333333333, -10.833333333333332, 22.6... |
-| 4 | Direct > Facebook | 3 | 4 | 4 | 0.750000 | [-8.5, 11.5] |
-| ... | ... | ... | ... | ... | ... | ... |
-| 75 | Instagram > Organic > Youtube | 46 | 123 | 123 | 0.373984 | [5.833333333333332, 34.33333333333333, 5.83333... |
-| 76 | Instagram > Youtube | 2 | 4 | 4 | 0.500000 | [2.0, 0.0] |
-| 77 | Organic | 64 | 92 | 92 | 0.695652 | [64.0] |
-| 78 | Organic > Youtube | 8 | 11 | 11 | 0.727273 | [30.5, -22.5] |
-| 79 | Youtube | 11 | 15 | 15 | 0.733333 | [11.0] |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>combinations</th>
+      <th>conversions</th>
+      <th>total_sequences</th>
+      <th>conversion_value</th>
+      <th>conv_rate</th>
+      <th>attribution_shapley_size3_conversions_algorithmic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>Direct</td>
+      <td>11</td>
+      <td>18</td>
+      <td>18</td>
+      <td>0.611111</td>
+      <td>[11.0]</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Direct &gt; Email Marketing</td>
+      <td>4</td>
+      <td>5</td>
+      <td>5</td>
+      <td>0.800000</td>
+      <td>[2.0, 2.0]</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>Direct &gt; Email Marketing &gt; Google Search</td>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
+      <td>0.500000</td>
+      <td>[-3.1666666666666665, -7.666666666666666, 11.8...</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>Direct &gt; Email Marketing &gt; Organic</td>
+      <td>4</td>
+      <td>6</td>
+      <td>6</td>
+      <td>0.666667</td>
+      <td>[-7.833333333333333, -10.833333333333332, 22.6...</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td>Direct &gt; Facebook</td>
+      <td>3</td>
+      <td>4</td>
+      <td>4</td>
+      <td>0.750000</td>
+      <td>[-8.5, 11.5]</td>
+    </tr>
+    <tr>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <td>75</td>
+      <td>Instagram &gt; Organic &gt; Youtube</td>
+      <td>46</td>
+      <td>123</td>
+      <td>123</td>
+      <td>0.373984</td>
+      <td>[5.833333333333332, 34.33333333333333, 5.83333...</td>
+    </tr>
+    <tr>
+      <td>76</td>
+      <td>Instagram &gt; Youtube</td>
+      <td>2</td>
+      <td>4</td>
+      <td>4</td>
+      <td>0.500000</td>
+      <td>[2.0, 0.0]</td>
+    </tr>
+    <tr>
+      <td>77</td>
+      <td>Organic</td>
+      <td>64</td>
+      <td>92</td>
+      <td>92</td>
+      <td>0.695652</td>
+      <td>[64.0]</td>
+    </tr>
+    <tr>
+      <td>78</td>
+      <td>Organic &gt; Youtube</td>
+      <td>8</td>
+      <td>11</td>
+      <td>11</td>
+      <td>0.727273</td>
+      <td>[30.5, -22.5]</td>
+    </tr>
+    <tr>
+      <td>79</td>
+      <td>Youtube</td>
+      <td>11</td>
+      <td>15</td>
+      <td>15</td>
+      <td>0.733333</td>
+      <td>[11.0]</td>
+    </tr>
+  </tbody>
+</table>
+
 
 ### Visualization
 After obtaining every attribution from different models stored in our ***.group_by_channels_models*** object it is possible to plot and compare results for insights
