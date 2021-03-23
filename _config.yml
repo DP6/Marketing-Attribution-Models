@@ -1,1 +1,4 @@
-theme: jekyll-theme-leap-day
+title: DP6 - Centro de inovações
+
+markdown: kramdown-parser-gfm
+remote_theme: dp6/dp6.github.io
