@@ -1,0 +1,4 @@
+[tool.semantic_release]
+version_variable = [
+  'setup.py:__version__'
+]
