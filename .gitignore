@@ -1,8 +1,9 @@
 *.pyc
 *.swp
 *~
-Pipfile
-Pipfile.lock
 dist/*
 build/*
 *.egg-info/*
+.vscode/*
+.pre-commit-config.yaml
+venv/
