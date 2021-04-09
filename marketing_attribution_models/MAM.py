@@ -51,10 +51,11 @@ class MAM:
             df=None,
             time_till_conv_colname=None,
             conversion_value=1,
+            conversion_null_value=None,
             channels_colname=None,
             journey_with_conv_colname=None,
             group_channels=False,
-            group_channels_by_id_list=[],
+            group_channels_by_id_list=None,
             group_timestamp_colname=None,
             create_journey_id_based_on_conversion = False,
             path_separator=' > ',
@@ -64,6 +65,10 @@ class MAM:
         self.verbose = verbose
         self.sep = path_separator
         self.group_by_channels_models = None
+        #self.decode_channels = None
+
+        if group_channels_by_id_list is None:
+          group_channels_by_id_list = []
 
         ##########################################################
         ################## Instance attributes ###################
@@ -224,7 +229,7 @@ class MAM:
         #### group_channels == False ####
         #################################
         else:
-            df = df.reset_index().copy()
+            #df = df.reset_index().copy()
             self.journey_id = df[group_channels_by_id_list]
             self.print('Status_journey_id: Done')
 
@@ -280,12 +285,18 @@ class MAM:
             else:
               self.conversion_value = df[conversion_value]
 
+        
+        if conversion_null_value is None:
+          self.conversion_null_value = None
+        elif isinstance(conversion_value, str):
+          self.conversion_null_value = df[conversion_null_value]
+        
         #################
         ### DataFrame ###
         #################
 
         self.DataFrame = None
-        self.as_pd_dataframe()
+        #self.as_pd_dataframe()
 
 
     ######################################
@@ -667,6 +678,7 @@ class MAM:
 
           # Grouping by channels and adding the values
           frame = frame.groupby(['channels'])['value'].sum()
+          # Aplicar o decoding no objeto frame
 
           # Grouped Results
           if isinstance(self.group_by_channels_models, pd.DataFrame):
@@ -964,7 +976,10 @@ class MAM:
         return self.__time_decay
 
 
-    def attribution_markov(self, transition_to_same_state=False, group_by_channels_models=True, conversion_value_as_frequency = True):
+    def attribution_markov(self, 
+                          transition_to_same_state=False, 
+                          group_by_channels_models=True, 
+                          conversion_value_as_frequency = True):
       """
       """
       model_name = 'attribution_markov'
@@ -1044,10 +1059,7 @@ class MAM:
 
       # copying conversion_quantity to each new row
       if type(self.conversion_value) in (int, float):
-          #we do not hava a frequency column yet so we are using self.conversion_value.apply(lambda x: 1)
-          # to count each line
           conversion_quantity = self.conversion_value.apply(lambda x: 1)
-          
       else:
           if conversion_value_as_frequency:
             freq_values = self.conversion_value
@@ -1055,7 +1067,6 @@ class MAM:
             freq_values = self.conversion_value.apply(lambda x: 1)
 
           conversion_quantity = []
-
           for a,b in zip(freq_values, journey_length):
               conversion_quantity.extend([a] * (b-1))
 
@@ -1214,6 +1225,7 @@ class MAM:
 
       # Creating conv_table that will contain the aggregated results based on the journeys
       conv_table = self.journey_conversion_table(order=order, size=size)
+      
 
       # Merge merge_custom_values
       if merge_custom_values is not None:
