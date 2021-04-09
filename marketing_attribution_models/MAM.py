@@ -366,10 +366,10 @@ class MAM:
                 self.conversion_value = df[conversion_value]
 
         
-        if conversion_null_value is None:
-          self.conversion_null_value = None
-        elif isinstance(conversion_value, str):
-          self.conversion_null_value = df[conversion_null_value]
+        # if conversion_null_value is None:
+        #   self.conversion_null_value = None
+        # elif isinstance(conversion_value, str):
+        #   self.conversion_null_value = df[conversion_null_value]
         
         #################
         ### DataFrame ###
@@ -824,32 +824,6 @@ class MAM:
         # Results part 2: Results
         if group_by_channels_models:
 
-<<<<<<< HEAD
-
-          # Selecting last channel from the series
-          channels_series = self.channels.apply(lambda x: x[-1])
-
-          # Creating a data_frame where we have the last channel and the
-          # conversion values
-          frame = channels_series.to_frame(name='channels')
-          # multiplying with the boolean column that indicates if the conversion
-          # happened
-          frame['value'] = self.conversion_value * \
-              self.journey_with_conv.apply(int)
-
-          # Grouping by channels and adding the values
-          frame = frame.groupby(['channels'])['value'].sum()
-          # Aplicar o decoding no objeto frame
-
-          # Grouped Results
-          if isinstance(self.group_by_channels_models, pd.DataFrame):
-            frame = frame.reset_index()
-            frame.columns = ['channels', model_name]
-            self.group_by_channels_models = pd.merge(self.group_by_channels_models, frame, how='outer', on=['channels']).fillna(0)
-          else:
-            self.group_by_channels_models = frame.reset_index()
-            self.group_by_channels_models.columns = ['channels', model_name]
-=======
             # Selecting last channel from the series
             channels_series = self.channels.apply(lambda x: x[-1])
 
@@ -873,7 +847,6 @@ class MAM:
             else:
                 self.group_by_channels_models = frame.reset_index()
                 self.group_by_channels_models.columns = ["channels", model_name]
->>>>>>> ce23a9cc5d29260cd098202387cf64a831440d49
         else:
             frame = "group_by_channels_models = False"
 
@@ -1238,263 +1211,6 @@ class MAM:
 
         return self.__time_decay
 
-<<<<<<< HEAD
-    def attribution_markov(self, 
-                          transition_to_same_state=False, 
-                          group_by_channels_models=True, 
-                          conversion_value_as_frequency = True):
-      """
-      """
-      model_name = 'attribution_markov'
-      model_type = '_algorithmic'
-      if transition_to_same_state:
-        model_name = model_name + '_same_state' + model_type
-      else:
-        model_name = model_name + model_type
-
-      def power_to_infinity(matrix):
-          """
-          Raises a square matrix to an infinite power using eigendecomposition.
-          All matrix rows must add to 1.
-          M = Q*L*inv(Q), where L = eigenvalue diagonal values, Q = eigenvector matrix
-          M^N = Q*(L^N)*inv(Q)
-          """
-          eigen_value, eigen_vectors = np.linalg.eig(matrix)
-
-          # At infinity everything converges to 0 or 1, thus we use np.trunc()
-          diagonal = np.diag(np.trunc(eigen_value.real + 0.001))
-          try:
-             result = (eigen_vectors @ diagonal @ np.linalg.inv(eigen_vectors)).real
-          except np.linalg.LinAlgError as err:
-             if 'Singular matrix' in str(err):
-                  warnings.warn("Warning... Singular matrix error. Check for lines or cols fully filled with zeros")
-                  result = (eigen_vectors @ diagonal @ np.linalg.pinv(eigen_vectors)).real
-             else:
-                  raise
-          return result
-
-      def normalize_rows(matrix):
-          size = matrix.shape[0]
-          mean = matrix.sum(axis=1).reshape((size, 1))
-          mean = np.where(mean == 0, 1, mean)
-          return matrix / mean
-
-      def calc_total_conversion(matrix):
-          normal_matrix = normalize_rows(matrix)
-          infinity_matrix = power_to_infinity(normal_matrix)
-          return infinity_matrix[0, -1]
-
-      def removal_effect(matrix):
-          size = matrix.shape[0]
-          conversions = np.zeros(size)
-          for column in range(1, size - 2):
-              temp = matrix.copy()
-              temp[:, -2] = temp[:, -2] + temp[:, column]
-              temp[:, column] = 0
-              conversions[column] = calc_total_conversion(temp)
-          conversion_orig = calc_total_conversion(matrix)
-          return 1 - (conversions / conversion_orig)
-
-      def path_to_matrix(paths):
-          channel_max = int(paths[:, 0:2].max()) + 1
-          matrix = np.zeros((channel_max, channel_max), dtype="float")
-          for x, y, val in paths:
-              matrix[int(x), int(y)] = val
-          matrix[-1, -1] = 1
-          matrix[-2, -2] = 1
-          return matrix
-
-      temp = self.channels.apply(
-          lambda x: ["(inicio)"] + x) + self.journey_with_conv.apply(
-          lambda x: [
-              "(conversion)" if x else "(null)"])
-
-      orig = []
-      dest = []
-      journey_length = []
-
-      def save_orig_dest(arr):
-        orig.extend(arr[:-1])
-        dest.extend(arr[1:])
-        journey_length.append(len(arr))
-
-      temp.apply(save_orig_dest)
-
-      # copying conversion_quantity to each new row
-      if type(self.conversion_value) in (int, float):
-          conversion_quantity = self.conversion_value.apply(lambda x: 1)
-      else:
-          if conversion_value_as_frequency:
-            freq_values = self.conversion_value
-          else:            
-            freq_values = self.conversion_value.apply(lambda x: 1)
-
-          conversion_quantity = []
-          for a,b in zip(freq_values, journey_length):
-              conversion_quantity.extend([a] * (b-1))
-
-      temp = pd.DataFrame({"orig": orig, "dest": dest, "count": conversion_quantity})
-      temp = temp.groupby(["orig", "dest"], as_index=False).sum()
-      self.print(temp)
-
-      if not transition_to_same_state:
-          temp = temp[temp.orig != temp.dest]
-
-      # Converting channels_names to index and pass a numpy array foward
-      channels_names = (
-          ["(inicio)"]
-          + list(
-              (set(temp.orig) - set(["(inicio)"]))
-              | (set(temp.dest) - set(["(conversion)", "(null)"]))
-          )
-          + ["(null)", "(conversion)"]
-      )
-      temp["orig"] = temp.orig.apply(channels_names.index)
-      temp["dest"] = temp.dest.apply(channels_names.index)
-      matrix = path_to_matrix(temp[["orig", "dest", "count"]].values)
-      removal_effect_result = removal_effect(matrix)[1:-2]
-      results = removal_effect_result / removal_effect_result.sum(axis=0)
-
-      # Channels weights
-      frame = pd.DataFrame({"value": results}, index=channels_names[1:-2])
-      removal_effect_result = pd.DataFrame({"removal_effect": removal_effect_result}, index=channels_names[1:-2])
-
-      # Transition matrix
-      matrix = normalize_rows(matrix)
-      matrix = pd.DataFrame(matrix, columns=channels_names, index=channels_names)
-
-      # Apply weights back to each journey
-      chmap = {a: b[0] for a,b in zip(frame.index.values, frame.values)}
-      channels_value = self.channels.apply(lambda y: [chmap[x] for x in y])
-      channels_value = channels_value.apply(lambda x: list(np.array(x) / sum(x)))
-
-      # Adding the results to self.DataFrame
-      self.as_pd_dataframe()
-      self.DataFrame[model_name] = channels_value.apply(lambda x : self.sep.join([str(value) for value in x]))
-
-
-      # Grouping the attributed values for each channel
-      total_conv_value = self.journey_with_conv * self.conversion_value
-      if group_by_channels_models:
-        if isinstance(self.group_by_channels_models, pd.DataFrame):
-          frame = frame.reset_index()
-          frame.columns = ['channels', model_name]
-          frame[model_name] = frame[model_name] * total_conv_value.sum()
-          self.group_by_channels_models = pd.merge(self.group_by_channels_models, frame, how='outer', on=['channels']).fillna(0)
-        else:
-          frame = frame.reset_index()
-          frame.columns = ['channels', model_name]
-          frame[model_name] = frame[model_name] * total_conv_value.sum()
-          self.group_by_channels_models = frame
-      else:
-        frame = 'group_by_channels_models = False'
-
-      return (channels_value, frame, matrix, removal_effect_result)
-
-    def journey_conversion_table(self, order = False, size = None):
-      """
-      Transforms journey channels in boolean columns,
-      count the number of conversions and journeys and
-      compute the conversion rate of the channel combination
-      """
-      #Creating Channels DF
-      df_temp = self.journey_id.copy()
-
-      if order:
-        df_temp['combinations'] = self.channels.apply(lambda channels: sorted(list(set(channels)), key=lambda x: channels.index(x))  ).copy()
-      else:
-        df_temp['combinations'] = self.channels.apply(lambda channels: sorted(list(set(channels))) ).copy()
-
-      if size != None:
-        df_temp['combinations'] = df_temp['combinations'].apply(lambda channels: self.sep.join(channels[size * -1:]) )
-      else:
-        df_temp['combinations'] = df_temp['combinations'].apply(lambda channels: self.sep.join(channels) )
-
-      #Adding journey_with_conv column
-      df_temp['journey_with_conv'] = self.journey_with_conv.apply(int)
-      df_temp['conversion_value'] = self.conversion_value
-
-
-      #Grouping journey_with_conv
-      conv_val = df_temp.groupby(['combinations'])['conversion_value'].sum().reset_index()['conversion_value']
-      df_temp = df_temp.groupby(['combinations'])['journey_with_conv'].agg([('conversions', 'sum'), ('total_sequences', 'count')]).reset_index()
-      df_temp['conversion_value'] = conv_val
-      #Calculating the conversion rate
-      df_temp['conv_rate'] = df_temp['conversions'] / df_temp['total_sequences']
-
-
-      return df_temp
-
-    def coalitions(self, size = 4, unique_channels = None, order=False):
-      """
-      This function gives all the coalitions of different channels in a matrix. Most of the extra parameters
-      are used when calculating Shapley's value with order.
-      **size** = limits max size of unique channels in a single journey
-      **unique_channels** = By default will check self.channels unique values, or a list of channels can be passed
-      as well.
-      **order** = Boolean that indicates if the order of channels matters during the process.
-      """
-      if unique_channels is None:
-        unique_channels =  list(set(sum(self.channels.values, [])))
-      else:
-        unique_channels = unique_channels
-      channels_combination = []
-
-      # Creating a list with all the permutations if order is True
-      if order is True:
-        for L in range(0, size + 1):
-          for subset in itertools.combinations(unique_channels, L):
-            channels_combination.append(list(subset))
-      else:
-        for L in range(0, size + 1):
-          for subset in itertools.combinations(sorted(unique_channels), L):
-            channels_combination.append(list(subset))
-
-
-      #Creating a DF with the channels as the boolean columns
-      df_temp = pd.Series(channels_combination).to_frame(name='combinations')
-      for channel in unique_channels:
-        df_temp[channel] = df_temp.combinations.apply( lambda channels: any(channel in s for s in channels))
-
-      return df_temp
-
-    def attribution_shapley(self, 
-                            size=4, 
-                            order=False, 
-                            values_col='conv_rate',
-                            merge_custom_values = None,
-                            group_by_channels_models = True):
-      """
-      Defined by Wikipedia:
-      The Shapley value is a solution concept in Cooperative Game Theory. It was named in honor of Lloyd
-      Shapley, who introduced it in 1953.To each cooperative game it assigns a unique
-      distribution (among the players) of a total surplus generated by the coalition of all players.
-      Here in the context of marketing channels we can use the model to understand the valeu of the cooperation
-      of channels to generate a conversion.
-      Parameters:
-      size = limits max size of unique channels in a single journey. If there is a journey that has more channels
-      than the defined limit, the last N channels will be considered.
-                It's also important to accentuate that increasing the number of channels, increases the number calculations
-                exponentially.
-      order = Boolean that indicates if the order of channels matters during the process.
-      values_col = The conversion rate is used by default, but the other columns in the journey_conversion_table
-      can be used as well like 'conversions', 'conversion_value'.
-      merge_custom_values = None by defaut. Can be passed a Pandas Data Frame with two columns only, 
-                            the first one representing the channels combination and the secong the custom value that you want to apply as the values_col.
-                            Will be merged(Left Join) with grouped self.journey_conversion_table() and applied a .fillna().
-      group_by_channels_models = True by default. Will aggregate the attributed results by each channel on
-      self.group_by_channels_models
-      """
-
-      # Creating conv_table that will contain the aggregated results based on the journeys
-      conv_table = self.journey_conversion_table(order=order, size=size)
-      
-
-      # Merge merge_custom_values
-      if merge_custom_values is not None:
-        if not isinstance(merge_custom_values, pd.DataFrame):
-          print("Warning: variable merge_custom_values has to be a Pandas DataFrame containing two columns representing the channels combination and his conv value.")
-=======
     def attribution_markov(
         self,
         transition_to_same_state=False,
@@ -1506,7 +1222,6 @@ class MAM:
         model_type = "_algorithmic"
         if transition_to_same_state:
             model_name = model_name + "_same_state" + model_type
->>>>>>> ce23a9cc5d29260cd098202387cf64a831440d49
         else:
             model_name = model_name + model_type
 
