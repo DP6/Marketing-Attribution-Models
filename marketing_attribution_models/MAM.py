@@ -82,6 +82,10 @@ class MAM:
         self.verbose = verbose
         self.sep = path_separator
         self.group_by_channels_models = None
+        #self.decode_channels = None
+
+        if group_channels_by_id_list is None:
+          group_channels_by_id_list = []
 
         ##########################################################
         ################## Instance attributes ###################
@@ -292,7 +296,7 @@ class MAM:
         #### group_channels == False ####
         #################################
         else:
-            df = df.reset_index().copy()
+            #df = df.reset_index().copy()
             self.journey_id = df[group_channels_by_id_list]
             self._print("Status_journey_id: Done")
 
@@ -360,12 +364,18 @@ class MAM:
             else:
                 self.conversion_value = df[conversion_value]
 
+        
+        # if conversion_null_value is None:
+        #   self.conversion_null_value = None
+        # elif isinstance(conversion_value, str):
+        #   self.conversion_null_value = df[conversion_null_value]
+        
         #################
         ### DataFrame ###
         #################
 
         self.data_frame = None
-        self.as_pd_dataframe()
+        #self.as_pd_dataframe()
 
     ######################################
     ##### Section 2: Output methods  #####
