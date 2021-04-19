@@ -1,11 +1,12 @@
 import itertools
 import math
+import random
 import re
 import warnings
-import random
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
 
 plt.style.use("seaborn-white")
