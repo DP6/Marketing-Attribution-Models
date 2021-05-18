@@ -92,8 +92,6 @@ class MAM:
         ################## Instance attributes ###################
         ##########################################################
 
-        self._original_df = df.copy()
-
         self._first_click = None
         self._last_click = None
         self._last_click_non = None
