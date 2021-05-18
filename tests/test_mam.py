@@ -1,16 +1,20 @@
-from marketing_attribution_models import MAM
 import pandas as pd
+from marketing_attribution_models import MAM
 
-att = None
-df_agg = None
-conv_value = None
-df_journey = None
+ATT = None
+DF_AGG = None
+CONV_VALUE = None
+DF_JOURNEY = None
 
 
 def setup_module():
-    global df_agg, att, conv_value, df_journey
-    conv_value = 3
-    df_agg = pd.DataFrame(
+    """
+    Setup module that will create a MAM objetct and
+    will run attribution models for testing.
+    """
+    global DF_AGG, ATT, CONV_VALUE, DF_JOURNEY
+    CONV_VALUE = 3
+    DF_AGG = pd.DataFrame(
         {
             "channels_agg": [
                 "A",
@@ -23,30 +27,37 @@ def setup_module():
                 "C > A",
                 "C > B > A",
             ],
-            "conversion_value": [conv_value for i in range(9)],
+            "conversion_value": [CONV_VALUE for i in range(9)],
         }
     )
-    att = MAM(
-        df_agg, conversion_value="conversion_value", channels_colname="channels_agg"
+    ATT = MAM(
+        DF_AGG, conversion_value="conversion_value", channels_colname="channels_agg"
     )
 
-    att.attribution_first_click()
-    att.attribution_last_click()
-    att.attribution_last_click_non("A")
-    att.attribution_linear()
-    att.attribution_position_based()
-    att.attribution_time_decay(decay_over_time=0.5, frequency=1)
-    att.attribution_markov()
-    att.attribution_shapley()
-    df_journey = att.as_pd_dataframe()
+    ATT.attribution_first_click()
+    ATT.attribution_last_click()
+    ATT.attribution_last_click_non("A")
+    ATT.attribution_linear()
+    ATT.attribution_position_based()
+    ATT.attribution_time_decay(decay_over_time=0.5, frequency=1)
+    ATT.attribution_markov()
+    ATT.attribution_shapley()
+    DF_JOURNEY = ATT.as_pd_dataframe()
 
 
-def test_journey_results():
-    results = []
-    df_journey_test = df_journey.copy()
+def test_as_pd_dataframe_len():
+    """
+    Test function that will check if the len returned
+    on self.as_pd_dataframe() results will be the same
+    len as the number of channels
+    """
+    results = []  # Results variable
+    df_journey_test = DF_JOURNEY.copy()
     df_journey_test["size"] = (
         df_journey_test["channels_agg"].str.split(" > ").apply(len)
     )
+
+    # For loop on model results columns
     for col in [
         col
         for col in df_journey_test.columns
@@ -58,8 +69,14 @@ def test_journey_results():
 
 
 def test_agg_results():
-    res_value = df_agg["conversion_value"].sum()
-    model_results_df = att.group_by_channels_models
+    """
+    Test function that will check if the sum of
+    the model results are the same as the total
+    of conversions present when creating the MAM
+    object.
+    """
+    res_value = DF_AGG["conversion_value"].sum()
+    model_results_df = ATT.group_by_channels_models
     model_results_df = model_results_df[
         [col for col in model_results_df.columns if col != "channels"]
     ]
@@ -67,30 +84,42 @@ def test_agg_results():
 
 
 def test_att_first():
+    """
+    Test function to validate the first click method
+    results.
+    """
     colname = "attribution_first_click_heuristic"
-    df_journey_test = df_journey.copy()
+    df_journey_test = DF_JOURNEY.copy()
     assert all(
         df_journey_test[colname]
         .str.split(" > ")
-        .apply(lambda x: float(x[0]) == conv_value)
+        .apply(lambda x: float(x[0]) == CONV_VALUE)
         .values
     )
 
 
 def test_att_last():
+    """
+    Test function to validate the last click method
+    results.
+    """
     colname = "attribution_last_click_heuristic"
-    df_journey_test = df_journey.copy()
+    df_journey_test = DF_JOURNEY.copy()
     assert all(
         df_journey_test[colname]
         .str.split(" > ")
-        .apply(lambda x: float(x[-1]) == conv_value)
+        .apply(lambda x: float(x[-1]) == CONV_VALUE)
         .values
     )
 
 
 def test_att_last_non():
+    """
+    Test function to validate the last click non method
+    results.
+    """
     colname = "attribution_last_click_non_A_heuristic"
-    df_journey_test = df_journey.copy()
+    df_journey_test = DF_JOURNEY.copy()
     non_list = ["B > C > A", "C > A", "C > B > A"]
     df_journey_test = df_journey_test[
         df_journey_test["channels_agg"].apply(lambda x: x in non_list)
@@ -104,26 +133,34 @@ def test_att_last_non():
 
 
 def test_att_linear():
+    """
+    Test function to validate the linear method
+    results.
+    """
     colname = "attribution_linear_heuristic"
-    df_journey_test = df_journey.copy()
+    df_journey_test = DF_JOURNEY.copy()
     assert all(
         df_journey_test[colname]
         .str.split(" > ")
-        .apply(lambda x: float(x[0]) == (conv_value / len(x)))
+        .apply(lambda x: float(x[0]) == (CONV_VALUE / len(x)))
         .values
     )
 
 
 def test_att_position_based():
+    """
+    Test function to validate the position based method
+    results.
+    """
     colname = "attribution_position_based_0.4_0.2_0.4_heuristic"
-    df_journey_test = df_journey.copy()
+    df_journey_test = DF_JOURNEY.copy()
     df_test = df_journey_test[
         df_journey_test["channels_agg"].apply(lambda x: len(x) == 3)
     ]
     assert all(
         df_test[colname]
         .str.split(" > ")
-        .apply(lambda x: float(x[0]) == (conv_value * 0.4))
+        .apply(lambda x: float(x[0]) == (CONV_VALUE * 0.4))
         .values
     )
     df_test = df_journey_test[
@@ -132,7 +169,7 @@ def test_att_position_based():
     assert all(
         df_test[colname]
         .str.split(" > ")
-        .apply(lambda x: float(x[0]) == (conv_value * 0.5))
+        .apply(lambda x: float(x[0]) == (CONV_VALUE * 0.5))
         .values
     )
 
@@ -147,18 +184,3 @@ def test_att_position_based():
 
 # def test_att_shapley():
 #     colname = 'attribution_time_decay0.5_freq1_heuristic'
-
-if __name__ == "__main__":
-    setup_module(None)
-    print(df_journey)
-    colname = "attribution_first_click_heuristic"
-    df_journey_test = df_journey.copy()
-    print(df_journey_test[colname].str.split(" > ").apply(lambda x: float(x[0])).values)
-    print(
-        all(
-            df_journey_test[colname]
-            .str.split(" > ")
-            .apply(lambda x: float(x[0]) == conv_value)
-            .values
-        )
-    )
