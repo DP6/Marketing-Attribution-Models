@@ -1,6 +1,5 @@
 import itertools
 import math
-import random
 import re
 import warnings
 
@@ -8,8 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-plt.style.use("seaborn-white")
+from .data import random_data
+from .data_prep import journey
+from .data_prep import group_data
 
 
 class MAM:
@@ -99,84 +99,6 @@ class MAM:
         self._position_based = None
         self._time_decay = None
 
-        ###########################################################
-        ##### Section 0: Functions needed to create the class #####
-        ###########################################################
-
-        def journey_id_based_on_conversion(df, group_id, transaction_colname):
-            """Internal function that creates a journey_id column into a DF
-            containing a User ID and Boolean column that indicates if there has
-            been a conversion on that instance."""
-            df_temp = df.copy()
-
-            for i in group_id:
-                df_temp[i] = df_temp[i].apply(str)
-
-            # Converting bool column to int
-            df_temp["journey_id"] = df_temp[transaction_colname].map(
-                lambda x: 0 if not x else 1
-            )
-
-            # Cumsum for each transaction to expand the value for the rows that did not
-            # have a transaction
-            df_temp["journey_id"] = df_temp.groupby(group_id)["journey_id"].cumsum()
-
-            # Subtracting 1 only for the row that had a transaction
-            t = df_temp["journey_id"] - 1
-            df_temp["journey_id"] = (
-                df_temp["journey_id"].where(~df_temp[transaction_colname], t).apply(str)
-            )
-            df_temp["journey_id"] = (
-                "id:" + df_temp[group_id[0]] + "_J:" + df_temp["journey_id"]
-            )
-
-            del t
-            return df_temp
-
-        def random_mam_data_frame(user_id=300, k=50000, conv_rate=0.4):
-            channels = [
-                "Direct",
-                "Direct",
-                "Facebook",
-                "Facebook",
-                "Facebook",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Display",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Email Marketing",
-                "Youtube",
-                "Instagram",
-            ]
-            has_transaction = ([True] * int(conv_rate * 100)) + (
-                [False] * int((1 - conv_rate) * 100)
-            )
-            user_id = list(range(0, 700))
-            day = range(1, 30)
-            month = range(1, 12)
-
-            res = []
-            for i in [channels, has_transaction, user_id, day, month]:
-                res.append(random.choices(population=i, k=k))
-
-            df = pd.DataFrame(res).transpose()
-            df.columns = ["channels", "has_transaction", "user_id", "day", "month"]
-            df["visitStartTime"] = (
-                "2020-"
-                + df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-                + "-"
-                + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-            )
-
-            return df
-
         #####################################################
         ##### Section 1: Creating object and attributes #####
         #####################################################
@@ -186,7 +108,7 @@ class MAM:
         ###########################
 
         if random_df:
-            df = random_mam_data_frame()
+            df = random_data.data_frame()
             group_channels = True
             channels_colname = "channels"
             journey_with_conv_colname = "has_transaction"
@@ -201,15 +123,16 @@ class MAM:
         if group_channels:
 
             # Copying, sorting and converting variables
-            df = df.reset_index().copy()
-            df[group_timestamp_colname] = pd.to_datetime(df[group_timestamp_colname])
-            df.sort_values(
-                group_channels_by_id_list + [group_timestamp_colname], inplace=True
+            df = (
+                df.copy()
+                .reset_index()
+                .assign(timestamp=pd.to_datetime(df[group_timestamp_colname]))
+                .sort_values(group_channels_by_id_list + ["timestamp"])
             )
 
             if create_journey_id_based_on_conversion:
 
-                df = journey_id_based_on_conversion(
+                df = journey.journey_id_based_on_conversion(
                     df=df,
                     group_id=group_channels_by_id_list,
                     transaction_colname=journey_with_conv_colname,
@@ -219,38 +142,16 @@ class MAM:
             # Grouping channels based on group_channels_by_id_list
             ######################################################
 
-            self._print("group_channels == True")
-            self._print("Grouping channels...")
-            temp_channels = (
-                df.groupby(group_channels_by_id_list)[channels_colname]
-                .apply(list)
-                .reset_index()
-            )
-            self.channels = temp_channels[channels_colname]
-            self._print("Status: Done")
-
-            # Grouping timestamp based on group_channels_by_id_list
-            ####################################################
-            self._print("Grouping timestamp...")
-            df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
-            df_temp = df_temp.merge(
-                df.groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
-                on=group_channels_by_id_list,
+            df_temp = group_data.group_channels(
+                df,
+                channels_colname,
+                group_timestamp_colname,
+                group_channels_by_id_list,
+                print_log=False,
             )
 
-            # calculating the time till conversion
-            ######################################
-            df_temp["time_till_conv"] = (
-                df_temp[group_timestamp_colname + "_y"]
-                - df_temp[group_timestamp_colname + "_x"]
-            ).astype("timedelta64[h]")
-
-            df_temp = (
-                df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
-                .apply(list)
-                .reset_index()
-            )
-            self.time_till_conv = df_temp["time_till_conv"]
+            self.channels = df_temp["channel"].copy()
+            self.time_till_conv = df_temp["time_till_conv"].copy()
             self._print("Status: Done")
 
             if journey_with_conv_colname is None:
