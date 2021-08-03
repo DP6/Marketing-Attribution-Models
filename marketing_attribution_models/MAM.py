@@ -1,6 +1,5 @@
 import itertools
 import math
-import random
 import re
 import warnings
 
@@ -8,9 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-plt.style.use("seaborn-white")
-
+from .data import random_data
 
 class MAM:
     """MAM (Marketing Attribution Models) is a class inspired on the R Package.
@@ -133,50 +130,6 @@ class MAM:
             del t
             return df_temp
 
-        def random_mam_data_frame(user_id=300, k=50000, conv_rate=0.4):
-            channels = [
-                "Direct",
-                "Direct",
-                "Facebook",
-                "Facebook",
-                "Facebook",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Display",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Email Marketing",
-                "Youtube",
-                "Instagram",
-            ]
-            has_transaction = ([True] * int(conv_rate * 100)) + (
-                [False] * int((1 - conv_rate) * 100)
-            )
-            user_id = list(range(0, 700))
-            day = range(1, 30)
-            month = range(1, 12)
-
-            res = []
-            for i in [channels, has_transaction, user_id, day, month]:
-                res.append(random.choices(population=i, k=k))
-
-            df = pd.DataFrame(res).transpose()
-            df.columns = ["channels", "has_transaction", "user_id", "day", "month"]
-            df["visitStartTime"] = (
-                "2020-"
-                + df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-                + "-"
-                + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-            )
-
-            return df
-
         #####################################################
         ##### Section 1: Creating object and attributes #####
         #####################################################
@@ -186,7 +139,7 @@ class MAM:
         ###########################
 
         if random_df:
-            df = random_mam_data_frame()
+            df = random_data.data_frame()
             group_channels = True
             channels_colname = "channels"
             journey_with_conv_colname = "has_transaction"
