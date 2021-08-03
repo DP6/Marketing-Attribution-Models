@@ -1,6 +1,8 @@
 import pandas as pd
 from marketing_attribution_models import MAM
 
+
+
 #####################
 ## Setup Variables ##
 #####################
@@ -177,6 +179,7 @@ def test_att_position_based():
     )
 
 
+print(DF_JOURNEY)
 # def test_att_time():
 #     colname = 'attribution_time_decay0.5_freq1_heuristic'
 
