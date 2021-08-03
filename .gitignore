@@ -7,3 +7,4 @@ build/*
 .vscode/*
 .pre-commit-config.yaml
 venv/
+.venv/
