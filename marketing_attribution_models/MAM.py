@@ -769,20 +769,7 @@ class MAM:
         # Results part 1: Column values
         # Results in the same format as the DF
         channels_value = self.channels.apply(
-            lambda canais: np.asarray(
-                [
-                    1
-                    if i
-                    == max(
-                        [
-                            i if canal != but_not_this_channel else 0
-                            for i, canal in enumerate(canais)
-                        ]
-                    )
-                    else 0
-                    for i, canal in enumerate(canais)
-                ]
-            )
+            lambda canais: heuristic.last_click_non(canais, but_not_this_channel)
         )
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
@@ -963,22 +950,8 @@ class MAM:
 
         # Selecting last channel from the series
         channels_value = self.channels.apply(
-            lambda canais: np.asarray([1])
-            if len(canais) == 1
-            else np.asarray(
-                [
-                    list_positions_first_middle_last[0]
-                    + list_positions_first_middle_last[1] / 2,
-                    list_positions_first_middle_last[2]
-                    + list_positions_first_middle_last[1] / 2,
-                ]
-            )
-            if len(canais) == 2
-            else np.asarray(
-                [list_positions_first_middle_last[0]]
-                + [list_positions_first_middle_last[1] / (len(canais) - 2)]
-                * (len(canais) - 2)
-                + [list_positions_first_middle_last[0]]
+            lambda canais: heuristic.position_based(
+                canais, list_positions_first_middle_last
             )
         )
         # multiplying the results with the conversion value
@@ -1016,14 +989,7 @@ class MAM:
         """
         model_name = "attribution_position_decay_heuristic"
 
-        channels_value = self.channels.apply(
-            lambda channels: np.asarray([1])
-            if len(channels) == 1
-            else (
-                np.asarray(list(range(1, len(channels) + 1)))
-                / np.sum(np.asarray(list(range(1, len(channels) + 1))))
-            )
-        )
+        channels_value = self.channels.apply(heuristic.position_decay)
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
         # multiplying with the boolean column that indicates if the conversion
@@ -1073,15 +1039,8 @@ class MAM:
         else:
             # Removing zeros and dividing by the frequency
             time_till_conv_window = self.time_till_conv.apply(
-                lambda time_till_conv: np.exp(
-                    math.log(decay_over_time)
-                    * np.floor(np.asarray(time_till_conv) / frequency)
-                )
-                / sum(
-                    np.exp(
-                        math.log(decay_over_time)
-                        * np.floor(np.asarray(time_till_conv) / frequency)
-                    )
+                lambda time_till_conv: heuristic.time_decay(
+                    time_till_conv, decay_over_time, frequency
                 )
             )
 
