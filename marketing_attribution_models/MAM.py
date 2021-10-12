@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
+from .models import heuristic
 from .data import random_data
 from .data_prep import journey
 from .data_prep import group_data
@@ -701,9 +703,7 @@ class MAM:
 
         # Results part 1: Column values
         # Results in the same format as the DF
-        channels_value = self.channels.apply(
-            lambda channels: np.asarray(([0] * (len(channels) - 1)) + [1])
-        )
+        channels_value = self.channels.apply(heuristic.last_click)
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
         # multiplying with the boolean column that indicates whether the conversion
@@ -856,9 +856,7 @@ class MAM:
         ###############################
 
         # Results in the same format as the DF
-        channels_value = self.channels.apply(
-            lambda channels: np.asarray([1] + ([0] * (len(channels) - 1)))
-        )
+        channels_value = self.channels.apply(heuristic.first_click)
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
         # multiplying with the boolean column that indicates if the conversion
