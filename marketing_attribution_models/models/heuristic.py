@@ -6,14 +6,13 @@ import pandas as pd
 
 def last_click(channels_list, value=1):
     """
-
     Parameters
     ----------
     channels_list : list
         List of channels.
     Returns
     -------
-    list : list
+    list : np.asarray
         List with values distributed
     """
     return np.asarray(([0] * (len(channels_list) - 1)) + [value])
@@ -21,14 +20,13 @@ def last_click(channels_list, value=1):
 
 def last_click_non(channels_list, non_value, value=1):
     """
-
     Parameters
     ----------
     channels_list : list
         List of channels.
     Returns
     -------
-    list : list
+    list : np.asarray
         List with values distributed
     """
     if len(channels_list) > 1:
@@ -52,14 +50,13 @@ def last_click_non(channels_list, non_value, value=1):
 
 def first_click(channels_list, value=1):
     """
-
     Parameters
     ----------
     channels_list : list
         List of channels.
     Returns
     -------
-    list : list
+    list : np.asarray
         List with values distributed
     """
     return np.asarray([value] + ([0] * (len(channels_list) - 1)))
@@ -67,14 +64,13 @@ def first_click(channels_list, value=1):
 
 def linear(channels_list, value=1):
     """
-
     Parameters
     ----------
     channels_list : list
         List of channels.
     Returns
     -------
-    list : list
+    list : np.asarray
         List with values distributed
     """
     value = value / len(channels_list)
@@ -84,14 +80,15 @@ def linear(channels_list, value=1):
 
 def position_based(channels_list, distribution_list=None, value=1):
     """
-
     Parameters
     ----------
     channels_list : list
         List of channels.
+    distribution_list : list
+        List with values to be distributed
     Returns
     -------
-    list : list
+    list : np.asarray
         List with values distributed
     """
     if distribution_list is None:
@@ -113,14 +110,13 @@ def position_based(channels_list, distribution_list=None, value=1):
 
 def position_decay(channels_list, value=1):
     """
-
     Parameters
     ----------
     channels_list : list
         List of channels.
     Returns
     -------
-    list : list
+    list : np.asarray
         List with values distributed
     """
     if len(channels_list) == 1:
@@ -133,14 +129,17 @@ def position_decay(channels_list, value=1):
 
 def time_decay(decay_list, decay_over_time=0.5, frequency=168, value=1):
     """
-
     Parameters
     ----------
-    channels_list : list
+    decay_list : list
         List of channels.
+    decay_over_time: float
+        Value of the decay.
+    frequency: float
+        Frequency value of the decay
     Returns
     -------
-    list : list
+    list : np.asarray
         List with values distributed
     """
     if len(decay_list) == 1:
