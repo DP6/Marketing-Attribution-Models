@@ -1225,32 +1225,6 @@ class MAM:
         else:
             model_name = model_name + model_type
 
-        def power_to_infinity(matrix):
-            """Raises a square matrix to an infinite power using eigendecomposition.
-
-            All matrix rows must add to 1.
-            M = Q*L*inv(Q), where L = eigenvalue diagonal values, Q = eigenvector matrix
-            M^N = Q*(L^N)*inv(Q)
-            """
-            eigen_value, eigen_vectors = np.linalg.eig(matrix)
-
-            # At infinity everything converges to 0 or 1, thus we use np.trunc()
-            diagonal = np.diag(np.trunc(eigen_value.real + 0.001))
-            try:
-                result = (eigen_vectors @ diagonal @ np.linalg.inv(eigen_vectors)).real
-            except np.linalg.LinAlgError as err:
-                if "Singular matrix" in str(err):
-                    warnings.warn(
-                        "Warning... Singular matrix error. Check for lines or cols "
-                        + "fully filled with zeros."
-                    )
-                    result = (
-                        eigen_vectors @ diagonal @ np.linalg.pinv(eigen_vectors)
-                    ).real
-                else:
-                    raise
-            return result
-
         def normalize_rows(matrix):
             size = matrix.shape[0]
             mean = matrix.sum(axis=1).reshape((size, 1))
@@ -1258,9 +1232,18 @@ class MAM:
             return matrix / mean
 
         def calc_total_conversion(matrix):
-            normal_matrix = normalize_rows(matrix)
-            infinity_matrix = power_to_infinity(normal_matrix)
-            return infinity_matrix[0, -1]
+            # pylint: disable=invalid-name
+            # https://en.wikipedia.org/wiki/Absorbing_Markov_chain#Absorbing_probabilities
+            matrix = normalize_rows(matrix)
+
+            # Those indices follow from the construction, where we have the conversion 
+            # and non-conversion states as the last 2
+            Q = matrix[:-2, :-2] 
+            R = matrix[:-2, -2:] 
+            N = np.linalg.inv(np.identity(len(Q)) - Q)
+
+            # We also assume the first row represents the starting state
+            return (N @ R)[0, 1] 
 
         def removal_effect(matrix):
             size = matrix.shape[0]
