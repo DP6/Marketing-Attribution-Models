@@ -1236,7 +1236,7 @@ class MAM:
             # https://en.wikipedia.org/wiki/Absorbing_Markov_chain#Absorbing_probabilities
             matrix = normalize_rows(matrix)
 
-            # Those indices follow from the construction, where we have the conversion 
+            # Those indices follow from the construction, where we have the conversion
             # and non-conversion states as the last 2
             Q = matrix[:-2, :-2]
             R = matrix[:-2, -2:]
