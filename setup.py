@@ -18,9 +18,7 @@ setup(
     author="Andre Tocci",
     author_email="andre.tocci@dp6.com.br",
     url="https://github.com/DP6/Marketing-Attribution-Models",
-    project_urls={
-        "Source": "https://dp6.github.io/Marketing-Attribution-Models"
-    },
+    project_urls={"Source": "https://dp6.github.io/Marketing-Attribution-Models"},
     packages=["marketing_attribution_models"],
     install_requires=[
         "numpy",
