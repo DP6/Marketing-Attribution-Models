@@ -1238,12 +1238,12 @@ class MAM:
 
             # Those indices follow from the construction, where we have the conversion 
             # and non-conversion states as the last 2
-            Q = matrix[:-2, :-2] 
-            R = matrix[:-2, -2:] 
+            Q = matrix[:-2, :-2]
+            R = matrix[:-2, -2:]
             N = np.linalg.inv(np.identity(len(Q)) - Q)
 
             # We also assume the first row represents the starting state
-            return (N @ R)[0, 1] 
+            return (N @ R)[0, 1]
 
         def removal_effect(matrix):
             size = matrix.shape[0]
