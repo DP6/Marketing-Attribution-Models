@@ -1,6 +1,5 @@
 import itertools
 import math
-import random
 import re
 import warnings
 
@@ -9,7 +8,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-plt.style.use("seaborn-white")
+from .models import heuristic
+from .data import random_data
+from .data_prep import journey
+from .data_prep import group_data
 
 
 class MAM:
@@ -92,92 +94,12 @@ class MAM:
         ################## Instance attributes ###################
         ##########################################################
 
-        self._original_df = df.copy()
-
         self._first_click = None
         self._last_click = None
         self._last_click_non = None
         self._linear = None
         self._position_based = None
         self._time_decay = None
-
-        ###########################################################
-        ##### Section 0: Functions needed to create the class #####
-        ###########################################################
-
-        def journey_id_based_on_conversion(df, group_id, transaction_colname):
-            """Internal function that creates a journey_id column into a DF
-            containing a User ID and Boolean column that indicates if there has
-            been a conversion on that instance."""
-            df_temp = df.copy()
-
-            for i in group_id:
-                df_temp[i] = df_temp[i].apply(str)
-
-            # Converting bool column to int
-            df_temp["journey_id"] = df_temp[transaction_colname].map(
-                lambda x: 0 if not x else 1
-            )
-
-            # Cumsum for each transaction to expand the value for the rows that did not
-            # have a transaction
-            df_temp["journey_id"] = df_temp.groupby(group_id)["journey_id"].cumsum()
-
-            # Subtracting 1 only for the row that had a transaction
-            t = df_temp["journey_id"] - 1
-            df_temp["journey_id"] = (
-                df_temp["journey_id"].where(~df_temp[transaction_colname], t).apply(str)
-            )
-            df_temp["journey_id"] = (
-                "id:" + df_temp[group_id[0]] + "_J:" + df_temp["journey_id"]
-            )
-
-            del t
-            return df_temp
-
-        def random_mam_data_frame(user_id=300, k=50000, conv_rate=0.4):
-            channels = [
-                "Direct",
-                "Direct",
-                "Facebook",
-                "Facebook",
-                "Facebook",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Display",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Email Marketing",
-                "Youtube",
-                "Instagram",
-            ]
-            has_transaction = ([True] * int(conv_rate * 100)) + (
-                [False] * int((1 - conv_rate) * 100)
-            )
-            user_id = list(range(0, 700))
-            day = range(1, 30)
-            month = range(1, 12)
-
-            res = []
-            for i in [channels, has_transaction, user_id, day, month]:
-                res.append(random.choices(population=i, k=k))
-
-            df = pd.DataFrame(res).transpose()
-            df.columns = ["channels", "has_transaction", "user_id", "day", "month"]
-            df["visitStartTime"] = (
-                "2020-"
-                + df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-                + "-"
-                + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-            )
-
-            return df
 
         #####################################################
         ##### Section 1: Creating object and attributes #####
@@ -188,7 +110,7 @@ class MAM:
         ###########################
 
         if random_df:
-            df = random_mam_data_frame()
+            df = random_data.data_frame()
             group_channels = True
             channels_colname = "channels"
             journey_with_conv_colname = "has_transaction"
@@ -203,15 +125,16 @@ class MAM:
         if group_channels:
 
             # Copying, sorting and converting variables
-            df = df.reset_index().copy()
-            df[group_timestamp_colname] = pd.to_datetime(df[group_timestamp_colname])
-            df.sort_values(
-                group_channels_by_id_list + [group_timestamp_colname], inplace=True
+            df = (
+                df.copy()
+                .reset_index()
+                .assign(timestamp=pd.to_datetime(df[group_timestamp_colname]))
+                .sort_values(group_channels_by_id_list + ["timestamp"])
             )
 
             if create_journey_id_based_on_conversion:
 
-                df = journey_id_based_on_conversion(
+                df = journey.journey_id_based_on_conversion(
                     df=df,
                     group_id=group_channels_by_id_list,
                     transaction_colname=journey_with_conv_colname,
@@ -221,38 +144,16 @@ class MAM:
             # Grouping channels based on group_channels_by_id_list
             ######################################################
 
-            self._print("group_channels == True")
-            self._print("Grouping channels...")
-            temp_channels = (
-                df.groupby(group_channels_by_id_list)[channels_colname]
-                .apply(list)
-                .reset_index()
-            )
-            self.channels = temp_channels[channels_colname]
-            self._print("Status: Done")
-
-            # Grouping timestamp based on group_channels_by_id_list
-            ####################################################
-            self._print("Grouping timestamp...")
-            df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
-            df_temp = df_temp.merge(
-                df.groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
-                on=group_channels_by_id_list,
+            df_temp = group_data.group_channels(
+                df,
+                channels_colname,
+                group_timestamp_colname,
+                group_channels_by_id_list,
+                print_log=False,
             )
 
-            # calculating the time till conversion
-            ######################################
-            df_temp["time_till_conv"] = (
-                df_temp[group_timestamp_colname + "_y"]
-                - df_temp[group_timestamp_colname + "_x"]
-            ).astype("timedelta64[h]")
-
-            df_temp = (
-                df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
-                .apply(list)
-                .reset_index()
-            )
-            self.time_till_conv = df_temp["time_till_conv"]
+            self.channels = df_temp["channel"].copy()
+            self.time_till_conv = df_temp["time_till_conv"].copy()
             self._print("Status: Done")
 
             if journey_with_conv_colname is None:
@@ -802,9 +703,7 @@ class MAM:
 
         # Results part 1: Column values
         # Results in the same format as the DF
-        channels_value = self.channels.apply(
-            lambda channels: np.asarray(([0] * (len(channels) - 1)) + [1])
-        )
+        channels_value = self.channels.apply(heuristic.last_click)
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
         # multiplying with the boolean column that indicates whether the conversion
@@ -870,20 +769,7 @@ class MAM:
         # Results part 1: Column values
         # Results in the same format as the DF
         channels_value = self.channels.apply(
-            lambda canais: np.asarray(
-                [
-                    1
-                    if i
-                    == max(
-                        [
-                            i if canal != but_not_this_channel else 0
-                            for i, canal in enumerate(canais)
-                        ]
-                    )
-                    else 0
-                    for i, canal in enumerate(canais)
-                ]
-            )
+            lambda canais: heuristic.last_click_non(canais, but_not_this_channel)
         )
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
@@ -957,9 +843,7 @@ class MAM:
         ###############################
 
         # Results in the same format as the DF
-        channels_value = self.channels.apply(
-            lambda channels: np.asarray([1] + ([0] * (len(channels) - 1)))
-        )
+        channels_value = self.channels.apply(heuristic.first_click)
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
         # multiplying with the boolean column that indicates if the conversion
@@ -1066,22 +950,8 @@ class MAM:
 
         # Selecting last channel from the series
         channels_value = self.channels.apply(
-            lambda canais: np.asarray([1])
-            if len(canais) == 1
-            else np.asarray(
-                [
-                    list_positions_first_middle_last[0]
-                    + list_positions_first_middle_last[1] / 2,
-                    list_positions_first_middle_last[2]
-                    + list_positions_first_middle_last[1] / 2,
-                ]
-            )
-            if len(canais) == 2
-            else np.asarray(
-                [list_positions_first_middle_last[0]]
-                + [list_positions_first_middle_last[1] / (len(canais) - 2)]
-                * (len(canais) - 2)
-                + [list_positions_first_middle_last[0]]
+            lambda canais: heuristic.position_based(
+                canais, list_positions_first_middle_last
             )
         )
         # multiplying the results with the conversion value
@@ -1119,14 +989,7 @@ class MAM:
         """
         model_name = "attribution_position_decay_heuristic"
 
-        channels_value = self.channels.apply(
-            lambda channels: np.asarray([1])
-            if len(channels) == 1
-            else (
-                np.asarray(list(range(1, len(channels) + 1)))
-                / np.sum(np.asarray(list(range(1, len(channels) + 1))))
-            )
-        )
+        channels_value = self.channels.apply(heuristic.position_decay)
         # multiplying the results with the conversion value
         channels_value = channels_value * self.conversion_value
         # multiplying with the boolean column that indicates if the conversion
@@ -1176,15 +1039,8 @@ class MAM:
         else:
             # Removing zeros and dividing by the frequency
             time_till_conv_window = self.time_till_conv.apply(
-                lambda time_till_conv: np.exp(
-                    math.log(decay_over_time)
-                    * np.floor(np.asarray(time_till_conv) / frequency)
-                )
-                / sum(
-                    np.exp(
-                        math.log(decay_over_time)
-                        * np.floor(np.asarray(time_till_conv) / frequency)
-                    )
+                lambda time_till_conv: heuristic.time_decay(
+                    time_till_conv, decay_over_time, frequency
                 )
             )
 
