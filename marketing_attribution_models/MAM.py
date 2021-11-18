@@ -306,7 +306,7 @@ class MAM:
             #####################
 
             # converts channels str to list of channels
-            if isinstance(df[channels_colname][0], str):
+            if isinstance(df[channels_colname].iloc[0], str):
                 self._print("Status_journey_to_list: Working")
                 self.channels = df[channels_colname].apply(lambda x: x.split(self.sep))
                 self._print("Status_journey_to_list: Done")
@@ -336,7 +336,7 @@ class MAM:
                         + "models in this class"
                     )
                 else:
-                    if isinstance(df[channels_colname][0], str):
+                    if isinstance(df[channels_colname].iloc[0], str):
                         self.time_till_conv = df[time_till_conv_colname].apply(
                             lambda x: [float(value) for value in x.split(self.sep)]
                         )
