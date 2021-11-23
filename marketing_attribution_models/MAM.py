@@ -1081,7 +1081,7 @@ class MAM:
                 [list_positions_first_middle_last[0]]
                 + [list_positions_first_middle_last[1] / (len(canais) - 2)]
                 * (len(canais) - 2)
-                + [list_positions_first_middle_last[0]]
+                + [list_positions_first_middle_last[2]]
             )
         )
         # multiplying the results with the conversion value
