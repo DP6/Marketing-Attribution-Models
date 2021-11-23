@@ -1214,9 +1214,9 @@ class MAM:
     def attribution_markov(
         self,
         order=1,
-        start_state_name='(inicio)',
-        conversion_state_name='(conversion)',
-        null_state_name='(null)',
+        start_state_name="(inicio)",
+        conversion_state_name="(conversion)",
+        null_state_name="(null)",
         transition_to_same_state=False,
         group_by_channels_models=True,
         conversion_value_as_frequency=True,
