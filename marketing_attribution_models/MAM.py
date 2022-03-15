@@ -92,7 +92,8 @@ class MAM:
         ################## Instance attributes ###################
         ##########################################################
 
-        self._original_df = df.copy()
+        if not random_df:
+            self._original_df = df.copy()
 
         self._first_click = None
         self._last_click = None
@@ -137,46 +138,47 @@ class MAM:
 
         def random_mam_data_frame(user_id=300, k=50000, conv_rate=0.4):
             channels = [
-                "Direct",
-                "Direct",
-                "Facebook",
-                "Facebook",
-                "Facebook",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Search",
-                "Google Display",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Organic",
-                "Email Marketing",
-                "Youtube",
-                "Instagram",
+            "Direct",
+            "Direct",
+            "Facebook",
+            "Facebook",
+            "Facebook",
+            "Google Search",
+            "Google Search",
+            "Google Search",
+            "Google Search",
+            "Google Display",
+            "Organic",
+            "Organic",
+            "Organic",
+            "Organic",
+            "Organic",
+            "Organic",
+            "Email Marketing",
+            "Youtube",
+            "Instagram",
             ]
             has_transaction = ([True] * int(conv_rate * 100)) + (
-                [False] * int((1 - conv_rate) * 100)
+              [False] * int((1 - conv_rate) * 100)
             )
             user_id = list(range(0, 700))
-            day = range(1, 30)
+            day = range(1, 29)
             month = range(1, 12)
+            rows = []
+            year = 2020
+            for i in range(0,k):
+              c=random.choices(channels)[0]
+              h=random.choices(has_transaction)[0]
+              u=random.choices(user_id)[0]
+              d=random.choices(day)[0]
+              m=random.choices(month)[0]
+              y=year
+              row = [c,h,u,d,m,y]
+              rows.append(row)
 
-            res = []
-            for i in [channels, has_transaction, user_id, day, month]:
-                res.append(random.choices(population=i, k=k))
-
-            df = pd.DataFrame(res).transpose()
-            df.columns = ["channels", "has_transaction", "user_id", "day", "month"]
-            df["visitStartTime"] = (
-                "2020-"
-                + df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-                + "-"
-                + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
-            )
-
+        
+            df = pd.DataFrame(data=rows, columns = ["channels", "has_transaction", "user_id", "day", "month", "year"])
+            df['visitStartTime'] = df["year"].astype(str) + "-"+ df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val)) + "-" + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
             return df
 
         #####################################################
