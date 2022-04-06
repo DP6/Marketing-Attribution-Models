@@ -120,9 +120,13 @@ class MAM:
                 lambda x: 0 if not x else 1
             )
 
+            # Converting transaction column to bool
+            df_temp[transaction_colname] = df_temp[transaction_colname].astype(bool)
+
             # Cumsum for each transaction to expand the value for the rows that did not
             # have a transaction
             df_temp["journey_id"] = df_temp.groupby(group_id)["journey_id"].cumsum()
+            
 
             # Subtracting 1 only for the row that had a transaction
             t = df_temp["journey_id"] - 1
@@ -136,49 +140,65 @@ class MAM:
             del t
             return df_temp
 
-        def random_mam_data_frame(user_id=300, k=50000, conv_rate=0.4):
+        def random_mam_data_frame(nrows=50000, conv_rate=0.4):
             channels = [
-            "Direct",
-            "Direct",
-            "Facebook",
-            "Facebook",
-            "Facebook",
-            "Google Search",
-            "Google Search",
-            "Google Search",
-            "Google Search",
-            "Google Display",
-            "Organic",
-            "Organic",
-            "Organic",
-            "Organic",
-            "Organic",
-            "Organic",
-            "Email Marketing",
-            "Youtube",
-            "Instagram",
+                "Direct",
+                "Direct",
+                "Facebook",
+                "Facebook",
+                "Facebook",
+                "Google Search",
+                "Google Search",
+                "Google Search",
+                "Google Search",
+                "Google Display",
+                "Organic",
+                "Organic",
+                "Organic",
+                "Organic",
+                "Organic",
+                "Organic",
+                "Email Marketing",
+                "Youtube",
+                "Instagram",
             ]
             has_transaction = ([True] * int(conv_rate * 100)) + (
-              [False] * int((1 - conv_rate) * 100)
+                [False] * int((1 - conv_rate) * 100)
             )
             user_id = list(range(0, 700))
             day = range(1, 29)
             month = range(1, 12)
-            rows = []
             year = 2020
-            for i in range(0,k):
-              c=random.choices(channels)[0]
-              h=random.choices(has_transaction)[0]
-              u=random.choices(user_id)[0]
-              d=random.choices(day)[0]
-              m=random.choices(month)[0]
-              y=year
-              row = [c,h,u,d,m,y]
-              rows.append(row)
+            rows = [
+                [
+                    random.choices(channels)[0],
+                    random.choices(has_transaction)[0],
+                    random.choices(user_id)[0],
+                    random.choices(day)[0],
+                    random.choices(month)[0],
+                    year,
+                ]
+                for _ in range(nrows)
+            ]
 
-        
-            df = pd.DataFrame(data=rows, columns = ["channels", "has_transaction", "user_id", "day", "month", "year"])
-            df['visitStartTime'] = df["year"].astype(str) + "-"+ df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val)) + "-" + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
+            df = pd.DataFrame(
+                data=rows,
+                columns=[
+                    "channels",
+                    "has_transaction",
+                    "user_id",
+                    "day",
+                    "month",
+                    "year",
+                ],
+            )
+            df["visitStartTime"] = (
+                df["year"].astype(str)
+                + "-"
+                + df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
+                + "-"
+                + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
+            )
             return df
 
         #####################################################
@@ -1427,17 +1447,18 @@ class MAM:
 
         # Creating a list with all the permutations if order is True
         if order is True:
-            for L in range(0, size + 1):
-                for subset in itertools.combinations(unique_channels, L):
+            for size in range(0, size + 1):
+                for subset in itertools.combinations(unique_channels, size):
                     channels_combination.append(list(subset))
         else:
-            for L in range(0, size + 1):
-                for subset in itertools.combinations(sorted(unique_channels), L):
+            for size in range(0, size + 1):
+                for subset in itertools.combinations(sorted(unique_channels), size):
                     channels_combination.append(list(subset))
 
         # Creating a DF with the channels as the boolean columns
         df_temp = pd.Series(channels_combination).to_frame(name="combinations")
         for channel in unique_channels:
+            # pylint: disable=cell-var-from-loop
             df_temp[channel] = df_temp.combinations.apply(
                 lambda channels: any(channel in s for s in channels)
             )
