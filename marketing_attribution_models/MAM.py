@@ -92,7 +92,8 @@ class MAM:
         ################## Instance attributes ###################
         ##########################################################
 
-        self._original_df = df.copy()
+        if not random_df:
+            self._original_df = df.copy()
 
         self._first_click = None
         self._last_click = None
@@ -119,6 +120,9 @@ class MAM:
                 lambda x: 0 if not x else 1
             )
 
+            # Converting transaction column to bool
+            df_temp[transaction_colname] = df_temp[transaction_colname].astype(bool)
+
             # Cumsum for each transaction to expand the value for the rows that did not
             # have a transaction
             df_temp["journey_id"] = df_temp.groupby(group_id)["journey_id"].cumsum()
@@ -135,7 +139,8 @@ class MAM:
             del t
             return df_temp
 
-        def random_mam_data_frame(user_id=300, k=50000, conv_rate=0.4):
+        def random_mam_data_frame(nrows=50000, conv_rate=0.4):
+            """Internal function that creates a random dataframe."""
             channels = [
                 "Direct",
                 "Direct",
@@ -161,22 +166,39 @@ class MAM:
                 [False] * int((1 - conv_rate) * 100)
             )
             user_id = list(range(0, 700))
-            day = range(1, 30)
+            day = range(1, 29)
             month = range(1, 12)
+            year = 2020
+            rows = [
+                [
+                    random.choices(channels)[0],
+                    random.choices(has_transaction)[0],
+                    random.choices(user_id)[0],
+                    random.choices(day)[0],
+                    random.choices(month)[0],
+                    year,
+                ]
+                for _ in range(nrows)
+            ]
 
-            res = []
-            for i in [channels, has_transaction, user_id, day, month]:
-                res.append(random.choices(population=i, k=k))
-
-            df = pd.DataFrame(res).transpose()
-            df.columns = ["channels", "has_transaction", "user_id", "day", "month"]
+            df = pd.DataFrame(
+                data=rows,
+                columns=[
+                    "channels",
+                    "has_transaction",
+                    "user_id",
+                    "day",
+                    "month",
+                    "year",
+                ],
+            )
             df["visitStartTime"] = (
-                "2020-"
+                df["year"].astype(str)
+                + "-"
                 + df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
                 + "-"
                 + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
             )
-
             return df
 
         #####################################################
@@ -306,7 +328,7 @@ class MAM:
             #####################
 
             # converts channels str to list of channels
-            if isinstance(df[channels_colname][0], str):
+            if isinstance(df[channels_colname].iloc[0], str):
                 self._print("Status_journey_to_list: Working")
                 self.channels = df[channels_colname].apply(lambda x: x.split(self.sep))
                 self._print("Status_journey_to_list: Done")
@@ -336,7 +358,7 @@ class MAM:
                         + "models in this class"
                     )
                 else:
-                    if isinstance(df[channels_colname][0], str):
+                    if isinstance(df[channels_colname].iloc[0], str):
                         self.time_till_conv = df[time_till_conv_colname].apply(
                             lambda x: [float(value) for value in x.split(self.sep)]
                         )
@@ -1433,7 +1455,7 @@ class MAM:
         df_temp["conv_rate"] = df_temp["conversions"] / df_temp["total_sequences"]
         return df_temp
 
-    def coalitions(self, size=4, unique_channels=None, order=False):
+    def coalitions(self, msize=4, unique_channels=None, order=False):
         """This function gives all the coalitions of different channels in a matrix.
         Most of the extra parameters are used when calculating Shapley's value with
         order.
@@ -1453,17 +1475,18 @@ class MAM:
 
         # Creating a list with all the permutations if order is True
         if order is True:
-            for L in range(0, size + 1):
-                for subset in itertools.combinations(unique_channels, L):
+            for size in range(0, msize + 1):
+                for subset in itertools.combinations(unique_channels, size):
                     channels_combination.append(list(subset))
         else:
-            for L in range(0, size + 1):
-                for subset in itertools.combinations(sorted(unique_channels), L):
+            for size in range(0, msize + 1):
+                for subset in itertools.combinations(sorted(unique_channels), size):
                     channels_combination.append(list(subset))
 
         # Creating a DF with the channels as the boolean columns
         df_temp = pd.Series(channels_combination).to_frame(name="combinations")
         for channel in unique_channels:
+            # pylint: disable=cell-var-from-loop
             df_temp[channel] = df_temp.combinations.apply(
                 lambda channels: any(channel in s for s in channels)
             )
