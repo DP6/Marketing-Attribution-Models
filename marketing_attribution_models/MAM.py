@@ -140,6 +140,7 @@ class MAM:
             return df_temp
 
         def random_mam_data_frame(nrows=50000, conv_rate=0.4):
+            """Internal function that creates a random dataframe."""
             channels = [
                 "Direct",
                 "Direct",
@@ -1426,7 +1427,7 @@ class MAM:
 
         return df_temp
 
-    def coalitions(self, size=4, unique_channels=None, order=False):
+    def coalitions(self, msize=4, unique_channels=None, order=False):
         """This function gives all the coalitions of different channels in a matrix.
         Most of the extra parameters are used when calculating Shapley's value with
         order.
@@ -1446,11 +1447,11 @@ class MAM:
 
         # Creating a list with all the permutations if order is True
         if order is True:
-            for size in range(0, size + 1):
+            for size in range(0, msize + 1):
                 for subset in itertools.combinations(unique_channels, size):
                     channels_combination.append(list(subset))
         else:
-            for size in range(0, size + 1):
+            for size in range(0, msize + 1):
                 for subset in itertools.combinations(sorted(unique_channels), size):
                     channels_combination.append(list(subset))
 
