@@ -126,7 +126,6 @@ class MAM:
             # Cumsum for each transaction to expand the value for the rows that did not
             # have a transaction
             df_temp["journey_id"] = df_temp.groupby(group_id)["journey_id"].cumsum()
-            
 
             # Subtracting 1 only for the row that had a transaction
             t = df_temp["journey_id"] - 1
