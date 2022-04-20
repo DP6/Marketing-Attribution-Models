@@ -241,7 +241,7 @@ class MAM:
             df_temp["time_till_conv"] = (
                 df_temp[group_timestamp_colname + "_y"]
                 - df_temp[group_timestamp_colname + "_x"]
-            ).astype("timedelta64[h]")
+            ).astype("timedelta64[s]") / 3600
 
             df_temp = (
                 df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
