@@ -231,9 +231,13 @@ class MAM:
             ####################################################
             self.print("Grouping timestamp...")
             df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
+            # mantém NaN nos casos em que não teve conversão
             df_temp = df_temp.merge(
-                df.groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
+                df
+                [df[journey_with_conv_colname]]
+                .groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
                 on=group_channels_by_id_list,
+                how='left'
             )
 
             # calculating the time till conversion
