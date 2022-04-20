@@ -68,6 +68,7 @@ class MAM:
         self,
         df=None,
         attribution_window: int = 30,
+        session_id_col: str = "session_id",
         time_till_conv_colname: str = None,
         conversion_value: int = 1,
         channels_colname: str = None,
@@ -82,6 +83,7 @@ class MAM:
     ):
 
         self.attribution_window = attribution_window * 24  # number of hours, actually
+        self.session_id_col = session_id_col
         self.verbose = verbose
         self.sep = path_separator
         self.group_by_channels_models = None
@@ -220,23 +222,12 @@ class MAM:
                 )
                 group_channels_by_id_list = ["journey_id"]
 
-            # Grouping channels based on group_channels_by_id_list
-            ######################################################
-
-            self.print("group_channels == True")
-            self.print("Grouping channels...")
-            temp_channels = (
-                df.groupby(group_channels_by_id_list)[channels_colname]
-                .apply(list)
-                .reset_index()
-            )
-            self.channels = temp_channels[channels_colname]
-            self.print("Status: Done")
-
             # Grouping timestamp based on group_channels_by_id_list
             ####################################################
             self.print("Grouping timestamp...")
-            df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
+            df_temp = df[
+                group_channels_by_id_list + [session_id_col, group_timestamp_colname]
+            ]
             # mantém NaN nos casos em que não teve conversão
             df_temp = df_temp.merge(
                 df[df[journey_with_conv_colname]]
@@ -254,7 +245,8 @@ class MAM:
             ).astype("timedelta64[s]") / 3600
 
             # filter by attribution window
-            df_temp[df_temp.time_till_conv < self.attribution_window]
+            df_temp = df_temp[(df_temp.time_till_conv.isnull()) | (df_temp.time_till_conv <= self.attribution_window)]
+            valid_sessions = df_temp[session_id_col]
 
             df_temp = (
                 df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
@@ -262,6 +254,22 @@ class MAM:
                 .reset_index()
             )
             self.time_till_conv = df_temp["time_till_conv"]
+            self.print("Status: Done")
+
+            # Filter whole df by valid sessions
+            df = df[df[session_id_col].isin(valid_sessions)]
+
+            # Grouping channels based on group_channels_by_id_list
+            ######################################################
+
+            self.print("group_channels == True")
+            self.print("Grouping channels...")
+            temp_channels = (
+                df.groupby(group_channels_by_id_list)[channels_colname]
+                .apply(list)
+                .reset_index()
+            )
+            self.channels = temp_channels[channels_colname]
             self.print("Status: Done")
 
             if journey_with_conv_colname is None:
@@ -278,6 +286,9 @@ class MAM:
                 ##########################################################
                 self.print("Grouping journey_id and journey_with_conv...")
                 df_temp = df[group_channels_by_id_list + [journey_with_conv_colname]]
+                # df_temp = df[group_channels_by_id_list + [journey_with_conv_colname]][
+                #     df[session_id_col].isin(valid_sessions)
+                # ]
                 temp_journey_id_conv = (
                     df_temp.groupby(group_channels_by_id_list)[
                         journey_with_conv_colname
