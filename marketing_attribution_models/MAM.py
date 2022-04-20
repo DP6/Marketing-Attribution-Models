@@ -256,10 +256,10 @@ class MAM:
             # Grouping timestamp based on group_channels_by_id_list
             ####################################################
             self._print("Grouping timestamp...")
-            df_temp = df[group_channels_by_id_list + ["journey_id", group_timestamp_colname]]
+            df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
             df_temp = df_temp.merge(
-                df.groupby("journey_id")[group_timestamp_colname].max(),
-                on="journey_id",
+                df.groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
+                on=group_channels_by_id_list,
             )
 
             # calculating the time till conversion
