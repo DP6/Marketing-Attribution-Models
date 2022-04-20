@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import pandas as pd
 import itertools
@@ -21,6 +23,8 @@ class MAM:
     Parameters:
     df = None by default, but should only be None if choosing to use a random dataframe.
          Otherwise, it has to receive a Pandas dataframe;
+    attribution_window = 30 by default.
+        Number of days before the conversion to be considered.
     time_till_conv_colname = None by default.
         Column name in the df containing the time in hours untill the
         moment of the conversion. The column must have the same elements as the
@@ -63,19 +67,21 @@ class MAM:
     def __init__(
         self,
         df=None,
-        time_till_conv_colname=None,
-        conversion_value=1,
-        channels_colname=None,
-        journey_with_conv_colname=None,
-        group_channels=False,
-        group_channels_by_id_list=[],
-        group_timestamp_colname=None,
-        create_journey_id_based_on_conversion=False,
-        path_separator=" > ",
-        verbose=False,
-        random_df=False,
+        attribution_window: int = 30,
+        time_till_conv_colname: str = None,
+        conversion_value: int = 1,
+        channels_colname: str = None,
+        journey_with_conv_colname: str = None,
+        group_channels: bool = False,
+        group_channels_by_id_list: List = [],
+        group_timestamp_colname: str = None,
+        create_journey_id_based_on_conversion: bool = False,
+        path_separator: str = " > ",
+        verbose: bool = False,
+        random_df: bool = False,
     ):
 
+        self.attribution_window = attribution_window * 24  # number of hours, actually
         self.verbose = verbose
         self.sep = path_separator
         self.group_by_channels_models = None
@@ -233,11 +239,11 @@ class MAM:
             df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
             # mantém NaN nos casos em que não teve conversão
             df_temp = df_temp.merge(
-                df
-                [df[journey_with_conv_colname]]
-                .groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
+                df[df[journey_with_conv_colname]]
+                .groupby(group_channels_by_id_list)[group_timestamp_colname]
+                .max(),
                 on=group_channels_by_id_list,
-                how='left'
+                how="left",
             )
 
             # calculating the time till conversion
@@ -246,6 +252,9 @@ class MAM:
                 df_temp[group_timestamp_colname + "_y"]
                 - df_temp[group_timestamp_colname + "_x"]
             ).astype("timedelta64[s]") / 3600
+
+            # filter by attribution window
+            df_temp[df_temp.time_till_conv < self.attribution_window]
 
             df_temp = (
                 df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
