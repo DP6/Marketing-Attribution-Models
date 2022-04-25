@@ -236,17 +236,27 @@ class MAM:
                 on=group_channels_by_id_list,
                 how="left",
             )
-
             # calculating the time till conversion
             ######################################
             df_temp["time_till_conv"] = (
                 df_temp[group_timestamp_colname + "_y"]
                 - df_temp[group_timestamp_colname + "_x"]
             ).astype("timedelta64[s]") / 3600
+            df_temp.rename(
+                columns={group_timestamp_colname + "_y": "conversion_time"},
+                inplace=True,
+            )
 
             # filter by attribution window
-            df_temp = df_temp[(df_temp.time_till_conv.isnull()) | (df_temp.time_till_conv <= self.attribution_window)]
+            df_temp = df_temp[
+                (df_temp.time_till_conv.isnull())
+                | (df_temp.time_till_conv <= self.attribution_window)
+            ]
             valid_sessions = df_temp[session_id_col]
+            self.df_conversion_time = df_temp[~df_temp.conversion_time.isnull()][
+                ["journey_id", "conversion_time"]
+            ].drop_duplicates()
+            print("jornadas de conversao ", self.df_conversion_time)
 
             df_temp = (
                 df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
@@ -411,6 +421,9 @@ class MAM:
                 )
                 self.DataFrame["converted_agg"] = self.journey_with_conv
                 self.DataFrame["conversion_value"] = self.conversion_value
+                self.DataFrame = self.DataFrame.merge(
+                    self.df_conversion_time, on="journey_id", how="left"
+                )
             else:
                 self.DataFrame = pd.DataFrame(
                     {
@@ -427,7 +440,7 @@ class MAM:
                     lambda x: self.sep.join([str(value) for value in x])
                 )
 
-        return self.DataFrame
+        return self.DataFrame, self.df_conversion_time
 
     def attribution_all_models(
         self,
