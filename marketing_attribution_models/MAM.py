@@ -32,6 +32,8 @@ class MAM:
         If your session is crashing here, try setting the variable
         time_till_conv_colname equal to 'skip_column'. But skipping this column you will
         not be able to run all the models in this class
+    round_values_to = 4 by default.
+        Round the values of the attribution models to this number of decimals.
     conversion_value = 1 by default.
         Integer that represents a monetary value of a 'conversion', can also receive a
         string indicating the column name on the dataframe containing the conversion
@@ -70,6 +72,7 @@ class MAM:
         attribution_window: int = 30,
         session_id_col: str = "session_id",
         time_till_conv_colname: str = None,
+        round_values_to: int = 4,
         conversion_value: int = 1,
         channels_colname: str = None,
         journey_with_conv_colname: str = None,
@@ -87,6 +90,7 @@ class MAM:
         self.verbose = verbose
         self.sep = path_separator
         self.group_by_channels_models = None
+        self.round_values_to = round_values_to
 
         ##########################################################
         ################## Instance attributes ###################
@@ -236,7 +240,7 @@ class MAM:
             df_temp = df_temp.merge(
                 df[df[journey_with_conv_colname]]
                 .groupby(group_channels_by_id_list)
-                .agg({group_timestamp_colname: "max", session_id_col: 'min'}),
+                .agg({group_timestamp_colname: "max", session_id_col: "min"}),
                 on=group_channels_by_id_list,
                 how="left",
             )
@@ -249,9 +253,9 @@ class MAM:
             df_temp["time_till_conv"] = df_temp["time_till_conv"].round(4)
             df_temp.rename(
                 columns={
-                    group_timestamp_colname + "_y": "conversion_time", 
-                    session_id_col + '_y': session_id_col + '_conv',
-                    session_id_col + '_x': session_id_col,
+                    group_timestamp_colname + "_y": "conversion_time",
+                    session_id_col + "_y": session_id_col + "_conv",
+                    session_id_col + "_x": session_id_col,
                 },
                 inplace=True,
             )
@@ -263,7 +267,7 @@ class MAM:
             ]
             valid_sessions = df_temp[session_id_col]
             self.df_conversion_time = df_temp[~df_temp.conversion_time.isnull()][
-                ["journey_id", "conversion_time", session_id_col + '_conv']
+                ["journey_id", "conversion_time", session_id_col + "_conv"]
             ].drop_duplicates()
 
             df_temp = (
@@ -431,7 +435,7 @@ class MAM:
                 self.DataFrame["conversion_value"] = self.conversion_value
                 self.DataFrame = self.DataFrame.merge(
                     self.df_conversion_time, on="journey_id", how="left"
-                ).rename(columns={self.session_id_col + '_conv': "session_id"})
+                ).rename(columns={self.session_id_col + "_conv": "session_id"})
             else:
                 self.DataFrame = pd.DataFrame(
                     {
@@ -1060,7 +1064,7 @@ class MAM:
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
         self.DataFrame[model_name] = channels_value.apply(
-            lambda x: self.sep.join([str(value) for value in x])
+            lambda x: self.sep.join([str(round(value, self.round_values_to)) for value in x])
         )
 
         # Grouping the attributed values for each channel
@@ -1389,7 +1393,7 @@ class MAM:
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
         self.DataFrame[model_name] = channels_value.apply(
-            lambda x: self.sep.join([str(value) for value in x])
+            lambda x: self.sep.join([str(round(value, self.round_values_to)) for value in x])
         )
 
         # Grouping the attributed values for each channel
