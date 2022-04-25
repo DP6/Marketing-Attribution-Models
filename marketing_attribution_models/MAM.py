@@ -128,6 +128,7 @@ class MAM:
                 .where((df_temp[transaction_colname] == False), t)
                 .apply(str)
             )
+            df_temp["journey_rnk"] = df_temp["journey_id"]
             df_temp["journey_id"] = (
                 "id:" + df_temp[group_id[0]] + "_J:" + df_temp["journey_id"]
             )
@@ -220,7 +221,10 @@ class MAM:
                     group_id=group_channels_by_id_list,
                     transaction_colname=journey_with_conv_colname,
                 )
-                group_channels_by_id_list = ["journey_id"]
+                group_channels_by_id_list = [
+                    "journey_id",
+                    "journey_rnk",
+                ] + group_channels_by_id_list
 
             # Grouping timestamp based on group_channels_by_id_list
             ####################################################
@@ -256,7 +260,6 @@ class MAM:
             self.df_conversion_time = df_temp[~df_temp.conversion_time.isnull()][
                 ["journey_id", "conversion_time"]
             ].drop_duplicates()
-            print("jornadas de conversao ", self.df_conversion_time)
 
             df_temp = (
                 df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
@@ -440,7 +443,7 @@ class MAM:
                     lambda x: self.sep.join([str(value) for value in x])
                 )
 
-        return self.DataFrame, self.df_conversion_time
+        return self.DataFrame
 
     def attribution_all_models(
         self,
