@@ -246,6 +246,7 @@ class MAM:
                 df_temp[group_timestamp_colname + "_y"]
                 - df_temp[group_timestamp_colname + "_x"]
             ).astype("timedelta64[s]") / 3600
+            df_temp["time_till_conv"] = df_temp["time_till_conv"].round(4)
             df_temp.rename(
                 columns={
                     group_timestamp_colname + "_y": "conversion_time", 
