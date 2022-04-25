@@ -235,8 +235,8 @@ class MAM:
             # mantém NaN nos casos em que não teve conversão
             df_temp = df_temp.merge(
                 df[df[journey_with_conv_colname]]
-                .groupby(group_channels_by_id_list)[group_timestamp_colname]
-                .max(),
+                .groupby(group_channels_by_id_list)
+                .agg({group_timestamp_colname: "max", session_id_col: 'min'}),
                 on=group_channels_by_id_list,
                 how="left",
             )
@@ -247,7 +247,11 @@ class MAM:
                 - df_temp[group_timestamp_colname + "_x"]
             ).astype("timedelta64[s]") / 3600
             df_temp.rename(
-                columns={group_timestamp_colname + "_y": "conversion_time"},
+                columns={
+                    group_timestamp_colname + "_y": "conversion_time", 
+                    session_id_col + '_y': session_id_col + '_conv',
+                    session_id_col + '_x': session_id_col,
+                },
                 inplace=True,
             )
 
@@ -258,7 +262,7 @@ class MAM:
             ]
             valid_sessions = df_temp[session_id_col]
             self.df_conversion_time = df_temp[~df_temp.conversion_time.isnull()][
-                ["journey_id", "conversion_time"]
+                ["journey_id", "conversion_time", session_id_col + '_conv']
             ].drop_duplicates()
 
             df_temp = (
@@ -426,7 +430,7 @@ class MAM:
                 self.DataFrame["conversion_value"] = self.conversion_value
                 self.DataFrame = self.DataFrame.merge(
                     self.df_conversion_time, on="journey_id", how="left"
-                )
+                ).rename(columns={self.session_id_col + '_conv': "session_id"})
             else:
                 self.DataFrame = pd.DataFrame(
                     {
