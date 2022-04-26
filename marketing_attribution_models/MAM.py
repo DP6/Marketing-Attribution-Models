@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
@@ -265,10 +265,24 @@ class MAM:
                 (df_temp.time_till_conv.isnull())
                 | (df_temp.time_till_conv <= self.attribution_window)
             ]
-            valid_sessions = df_temp[session_id_col]
+            valid_sessions = df_temp[
+                session_id_col
+            ]  # only sessions in attribution window
+
             self.df_conversion_time = df_temp[~df_temp.conversion_time.isnull()][
                 ["journey_id", "conversion_time", session_id_col + "_conv"]
             ].drop_duplicates()
+
+            # merge time till conv into original df
+            self.original_df = (
+                self.original_df.merge(
+                    df_temp[[session_id_col, "time_till_conv"]],
+                    on=session_id_col,
+                    how="inner",
+                )
+                .drop_duplicates()
+                .reset_index(drop=True)
+            )
 
             df_temp = (
                 df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
@@ -280,6 +294,15 @@ class MAM:
 
             # Filter whole df by valid sessions
             df = df[df[session_id_col].isin(valid_sessions)]
+
+            # Grouping sessions based on group_channels_by_id_list
+            ######################################################
+            sessions = (
+                df.groupby(group_channels_by_id_list)[session_id_col]
+                .apply(list)
+                .reset_index()
+            )
+            self.sessions = sessions[session_id_col]
 
             # Grouping channels based on group_channels_by_id_list
             ######################################################
@@ -431,6 +454,7 @@ class MAM:
                 self.DataFrame["channels_agg"] = self.channels.apply(
                     lambda x: self.sep.join(x)
                 )
+                self.DataFrame["sessions_agg"] = self.sessions
                 self.DataFrame["converted_agg"] = self.journey_with_conv
                 self.DataFrame["conversion_value"] = self.conversion_value
                 self.DataFrame = self.DataFrame.merge(
@@ -456,7 +480,8 @@ class MAM:
 
     def attribution_all_models(
         self,
-        model_type="all",
+        model_type: str = "all",
+        exclude_models: list = None,
         last_click_non_but_not_this_channel="Direct",
         time_decay_decay_over_time=0.5,
         time_decay_frequency=128,
@@ -475,9 +500,9 @@ class MAM:
            - attribution_position_based
            - attribution_time_decay
         Parameters:
-        model_type = ['all',
-                     'heuristic'
-                     'algorithmic']
+        model_type = 'all',
+                     'heuristic',
+                     'algorithmic'
         """
 
         if model_type == "all":
@@ -492,49 +517,59 @@ class MAM:
 
         if heuristic:
             # Running attribution_last_click
-            self.attribution_last_click(
-                group_by_channels_models=group_by_channels_models
-            )
+            if "attribution_last_click" not in exclude_models:
+                self.attribution_last_click(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_last_click_non
-            self.attribution_last_click_non(
-                but_not_this_channel=last_click_non_but_not_this_channel
-            )
+            if "attribution_last_click_non" not in exclude_models:
+                self.attribution_last_click_non(
+                    but_not_this_channel=last_click_non_but_not_this_channel
+                )
 
             # Running attribution_first_click
-            self.attribution_first_click(
-                group_by_channels_models=group_by_channels_models
-            )
+            if "attribution_first_click" not in exclude_models:
+                self.attribution_first_click(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_linear
-            self.attribution_linear(group_by_channels_models=group_by_channels_models)
+            if "attribution_linear" not in exclude_models:
+                self.attribution_linear(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_position_based
-            self.attribution_position_based(
-                group_by_channels_models=group_by_channels_models
-            )
+            if "attribution_position_based" not in exclude_models:
+                self.attribution_position_based(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_time_decay
-            self.attribution_time_decay(
-                decay_over_time=time_decay_decay_over_time,
-                frequency=time_decay_frequency,
-                group_by_channels_models=group_by_channels_models,
-            )
+            if "attribution_time_decay" not in exclude_models:
+                self.attribution_time_decay(
+                    decay_over_time=time_decay_decay_over_time,
+                    frequency=time_decay_frequency,
+                    group_by_channels_models=group_by_channels_models,
+                )
 
         if algorithmic:
 
             # Running attribution_shapley
-            self.attribution_shapley(
-                size=shapley_size,
-                order=shapley_order,
-                group_by_channels_models=group_by_channels_models,
-                values_col=shapley_values_col,
-            )
+            if "attribution_shapley" not in exclude_models:
+                self.attribution_shapley(
+                    size=shapley_size,
+                    order=shapley_order,
+                    group_by_channels_models=group_by_channels_models,
+                    values_col=shapley_values_col,
+                )
 
-            # Running attribution_shapley
-            self.attribution_markov(
-                transition_to_same_state=markov_transition_to_same_state
-            )
+            # Running attribution markov
+            if "attribution_markov" not in exclude_models:
+                self.attribution_markov(
+                    transition_to_same_state=markov_transition_to_same_state
+                )
 
         return self.group_by_channels_models
 
@@ -860,6 +895,9 @@ class MAM:
             lambda x: self.sep.join([str(value) for value in x])
         )
 
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
+
         # Results part 2: Results
         if group_by_channels_models:
 
@@ -940,6 +978,9 @@ class MAM:
             lambda x: self.sep.join([str(value) for value in x])
         )
 
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
+
         # Results part 2: Results
         if group_by_channels_models:
 
@@ -1014,6 +1055,8 @@ class MAM:
         self.DataFrame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Results part 2: Grouped Results
         #################################
@@ -1064,8 +1107,12 @@ class MAM:
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
         self.DataFrame[model_name] = channels_value.apply(
-            lambda x: self.sep.join([str(round(value, self.round_values_to)) for value in x])
+            lambda x: self.sep.join(
+                [str(round(value, self.round_values_to)) for value in x]
+            )
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         if group_by_channels_models:
@@ -1135,6 +1182,8 @@ class MAM:
         self.DataFrame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         if group_by_channels_models:
@@ -1178,6 +1227,8 @@ class MAM:
         self.DataFrame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         if group_by_channels_models:
@@ -1188,7 +1239,7 @@ class MAM:
         return (channels_value, frame)
 
     def attribution_time_decay(
-        self, decay_over_time=0.5, frequency=168, group_by_channels_models=True
+        self, decay_over_time=0.5, frequency=24, group_by_channels_models=True
     ):
         """Decays for each touchpoint further from conversion.
 
@@ -1238,6 +1289,10 @@ class MAM:
             self.as_pd_dataframe()
             self.DataFrame[model_name] = channels_value.apply(
                 lambda x: self.sep.join([str(value) for value in x])
+            )
+            # Add results to original DataFrame
+            self.original_df[model_name] = channels_value.explode().reset_index(
+                drop=True
             )
 
             # Grouping the attributed values for each channel
@@ -1393,8 +1448,12 @@ class MAM:
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
         self.DataFrame[model_name] = channels_value.apply(
-            lambda x: self.sep.join([str(round(value, self.round_values_to)) for value in x])
+            lambda x: self.sep.join(
+                [str(round(value, self.round_values_to)) for value in x]
+            )
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         total_conv_value = self.journey_with_conv * self.conversion_value
