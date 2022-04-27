@@ -203,8 +203,6 @@ class MAM:
             group_timestamp_colname = "visitStartTime"
             create_journey_id_based_on_conversion = True
 
-        self.original_df = df.copy()
-
         ################################
         #### group_channels == True ####
         ################################
@@ -217,6 +215,7 @@ class MAM:
             df.sort_values(
                 group_channels_by_id_list + [group_timestamp_colname], inplace=True
             )
+            self.original_df = df.copy()
 
             if create_journey_id_based_on_conversion:
 
