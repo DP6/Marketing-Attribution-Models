@@ -132,7 +132,7 @@ class MAM:
                 .where((df_temp[transaction_colname] == False), t)
                 .apply(str)
             )
-            df_temp["journey_rnk"] = df_temp["journey_id"]
+            df_temp["journey_rnk"] = df_temp["journey_id"].astype("int")
             df_temp["journey_id"] = (
                 "id:" + df_temp[group_id[0]] + "_J:" + df_temp["journey_id"]
             )
@@ -309,7 +309,7 @@ class MAM:
             self.print("group_channels == True")
             self.print("Grouping channels...")
             temp_channels = (
-                df.groupby(group_channels_by_id_list)[channels_colname]
+                df.groupby(group_channels_by_id_list, sort=False)[channels_colname]
                 .apply(list)
                 .reset_index()
             )
@@ -334,7 +334,7 @@ class MAM:
                 #     df[session_id_col].isin(valid_sessions)
                 # ]
                 temp_journey_id_conv = (
-                    df_temp.groupby(group_channels_by_id_list)[
+                    df_temp.groupby(group_channels_by_id_list, sort=False)[
                         journey_with_conv_colname
                     ]
                     .max()
