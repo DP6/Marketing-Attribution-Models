@@ -357,78 +357,7 @@ class MAM:
                     .reset_index()[conversion_value]
                 )
 
-        #################################
-        #### group_channels == False ####
-        #################################
-        else:
-            df = df.reset_index().copy()
-            self.journey_id = df[group_channels_by_id_list]
-            self.print("Status_journey_id: Done")
-
-            #####################
-            ### self.channels ###
-            #####################
-
-            # converts channels str to list of channels
-            if isinstance(df[channels_colname][0], str):
-                self.print("Status_journey_to_list: Working")
-                self.channels = df[channels_colname].apply(lambda x: x.split(self.sep))
-                self.print("Status_journey_to_list: Done")
-            else:
-                self.channels = df[channels_colname]
-                self.print("Status_journey_to_list: Skipped")
-
-            ###########################
-            ### self.time_till_conv ###
-            ###########################
-            if time_till_conv_colname is None:
-                self.print(
-                    "If your session is crashing here, try setting the variable "
-                    + "time_till_conv_colname equal to skip_column"
-                )
-                self.time_till_conv = self.channels.apply(
-                    lambda x: list(range(len(x)))[::-1]
-                )
-                self.time_till_conv = self.time_till_conv.apply(
-                    lambda x: list(np.asarray(x) * 24)
-                )
-            else:
-                if time_till_conv_colname == "skip_column":
-                    self.time_till_conv = None
-                    print(
-                        "Skipping this column you will not be able to run all the "
-                        + "models in this class"
-                    )
-                else:
-                    if isinstance(df[channels_colname][0], str):
-                        self.time_till_conv = df[time_till_conv_colname].apply(
-                            lambda x: [float(value) for value in x.split(self.sep)]
-                        )
-                    else:
-                        self.time_till_conv = df[time_till_conv_colname]
-            self.print("Status_time_till_conv: Done")
-
-            ##############################
-            ### self.journey_with_conv ###
-            ##############################
-            if journey_with_conv_colname is None:
-                self.journey_with_conv = self.channels.apply(lambda x: True)
-            else:
-                self.journey_with_conv = df[journey_with_conv_colname]
-            self.print("Status_journey_with_conv: Done")
-
-            ########################
-            ### conversion_value ###
-            ########################
-
-            # conversion_value could be a single int value or a panda series
-            if isinstance(conversion_value, int):
-                self.conversion_value = self.journey_with_conv.apply(
-                    lambda valor: conversion_value if valor else 0
-                )
-            else:
-                self.conversion_value = df[conversion_value]
-
+    
         #################
         ### DataFrame ###
         #################
