@@ -309,7 +309,7 @@ class MAM:
             self.print("group_channels == True")
             self.print("Grouping channels...")
             temp_channels = (
-                df.groupby(group_channels_by_id_list, sort=False)[channels_colname]
+                df.groupby(group_channels_by_id_list)[channels_colname]
                 .apply(list)
                 .reset_index()
             )
@@ -334,7 +334,7 @@ class MAM:
                 #     df[session_id_col].isin(valid_sessions)
                 # ]
                 temp_journey_id_conv = (
-                    df_temp.groupby(group_channels_by_id_list, sort=False)[
+                    df_temp.groupby(group_channels_by_id_list)[
                         journey_with_conv_colname
                     ]
                     .max()
