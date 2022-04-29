@@ -309,7 +309,7 @@ class MAM:
             self.print("group_channels == True")
             self.print("Grouping channels...")
             temp_channels = (
-                df.groupby(group_channels_by_id_list)[channels_colname]
+                df.groupby(group_channels_by_id_list, sort=False)[channels_colname]
                 .apply(list)
                 .reset_index()
             )
