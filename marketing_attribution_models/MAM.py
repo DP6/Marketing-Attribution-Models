@@ -257,7 +257,7 @@ class MAM:
 
             # Grouping timestamp based on group_channels_by_id_list
             ####################################################
-            self.print("Grouping timestamp...")
+            self._print("Grouping timestamp...")
             df_temp = df[
                 group_channels_by_id_list + [session_id_col, group_timestamp_colname]
             ]
@@ -332,15 +332,15 @@ class MAM:
             # Grouping channels based on group_channels_by_id_list
             ######################################################
 
-            self.print("group_channels == True")
-            self.print("Grouping channels...")
+            self._print("group_channels == True")
+            self._print("Grouping channels...")
             temp_channels = (
                 df.groupby(group_channels_by_id_list, sort=False)[channels_colname]
                 .apply(list)
                 .reset_index()
             )
             self.channels = temp_channels[channels_colname]
-            self.print("Status: Done")
+            self._print("Status: Done")
 
             if journey_with_conv_colname is None:
 
