@@ -383,7 +383,6 @@ class MAM:
                     .reset_index()[conversion_value]
                 )
 
-    
         #################
         ### DataFrame ###
         #################
@@ -1587,7 +1586,7 @@ class MAM:
             v = valores[1:]
             coaux = coa.copy()
 
-            for line in list(range(0, ((2**n) - 1))):
+            for line in list(range(0, ((2 ** n) - 1))):
 
                 for channel in coa.columns:
                     s = len(coaux.iloc[line, :][coaux.iloc[line, :] != 0])
