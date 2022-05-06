@@ -4,10 +4,14 @@ import numpy as np
 import pandas as pd
 import itertools
 import math
+import random
 import re
-import matplotlib.pyplot as plt
-import seaborn as sns
 import warnings
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 
 plt.style.use("seaborn-white")
 
@@ -84,6 +88,8 @@ class MAM:
         verbose: bool = False,
         random_df: bool = False,
     ):
+        if not group_channels_by_id_list:
+            group_channels_by_id_list = []
 
         self.attribution_window = attribution_window * 24  # number of hours, actually
         self.session_id_col = session_id_col
@@ -96,16 +102,19 @@ class MAM:
         ################## Instance attributes ###################
         ##########################################################
 
-        self.__first_click = None
-        self.__last_click = None
-        self.__last_click_non = None
-        self.__linear = None
-        self.__position_based = None
-        self.__time_decay = None
+        if not random_df:
+            self._original_df = df.copy()
 
-        ##########################################################
-        ##### Section 0: Funcions needed to create the class #####
-        ##########################################################
+        self._first_click = None
+        self._last_click = None
+        self._last_click_non = None
+        self._linear = None
+        self._position_based = None
+        self._time_decay = None
+
+        ###########################################################
+        ##### Section 0: Functions needed to create the class #####
+        ###########################################################
 
         def journey_id_based_on_conversion(df, group_id, transaction_colname):
             """Internal function that creates a journey_id column into a DF
@@ -118,8 +127,11 @@ class MAM:
 
             # Converting bool column to int
             df_temp["journey_id"] = df_temp[transaction_colname].map(
-                lambda x: 0 if x == False else 1
+                lambda x: 0 if not x else 1
             )
+
+            # Converting transaction column to bool
+            df_temp[transaction_colname] = df_temp[transaction_colname].astype(bool)
 
             # Cumsum for each transaction to expand the value for the rows that did not
             # have a transaction
@@ -128,9 +140,7 @@ class MAM:
             # Subtracting 1 only for the row that had a transaction
             t = df_temp["journey_id"] - 1
             df_temp["journey_id"] = (
-                df_temp["journey_id"]
-                .where((df_temp[transaction_colname] == False), t)
-                .apply(str)
+                df_temp["journey_id"].where(~df_temp[transaction_colname], t).apply(str)
             )
             df_temp["journey_rnk"] = df_temp["journey_id"].astype("int")
             df_temp["journey_id"] = (
@@ -140,9 +150,8 @@ class MAM:
             del t
             return df_temp
 
-        def random_mam_data_frame(user_id=300, k=50000, conv_rate=0.4):
-            import random
-
+        def random_mam_data_frame(nrows=50000, conv_rate=0.4):
+            """Internal function that creates a random dataframe."""
             channels = [
                 "Direct",
                 "Direct",
@@ -168,22 +177,39 @@ class MAM:
                 [False] * int((1 - conv_rate) * 100)
             )
             user_id = list(range(0, 700))
-            day = range(1, 30)
+            day = range(1, 29)
             month = range(1, 12)
+            year = 2020
+            rows = [
+                [
+                    random.choices(channels)[0],
+                    random.choices(has_transaction)[0],
+                    random.choices(user_id)[0],
+                    random.choices(day)[0],
+                    random.choices(month)[0],
+                    year,
+                ]
+                for _ in range(nrows)
+            ]
 
-            res = []
-            for i in [channels, has_transaction, user_id, day, month]:
-                res.append(random.choices(population=i, k=k))
-
-            df = pd.DataFrame(res).transpose()
-            df.columns = ["channels", "has_transaction", "user_id", "day", "month"]
+            df = pd.DataFrame(
+                data=rows,
+                columns=[
+                    "channels",
+                    "has_transaction",
+                    "user_id",
+                    "day",
+                    "month",
+                    "year",
+                ],
+            )
             df["visitStartTime"] = (
-                "2020-"
+                df["year"].astype(str)
+                + "-"
                 + df["month"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
                 + "-"
                 + df["day"].apply(lambda val: str(val) if val > 9 else "0" + str(val))
             )
-
             return df
 
         #####################################################
@@ -289,7 +315,7 @@ class MAM:
                 .reset_index()
             )
             self.time_till_conv = df_temp["time_till_conv"]
-            self.print("Status: Done")
+            self._print("Status: Done")
 
             # Filter whole df by valid sessions
             df = df[df[session_id_col].isin(valid_sessions)]
@@ -328,7 +354,7 @@ class MAM:
                 # Grouping unique journeys and whether the journey ended with a
                 # conversion
                 ##########################################################
-                self.print("Grouping journey_id and journey_with_conv...")
+                self._print("Grouping journey_id and journey_with_conv...")
                 df_temp = df[group_channels_by_id_list + [journey_with_conv_colname]]
                 # df_temp = df[group_channels_by_id_list + [journey_with_conv_colname]][
                 #     df[session_id_col].isin(valid_sessions)
@@ -341,9 +367,9 @@ class MAM:
                     .reset_index()
                 )
                 self.journey_id = temp_journey_id_conv[group_channels_by_id_list]
-                self.print("Status: Done")
+                self._print("Status: Done")
                 self.journey_with_conv = temp_journey_id_conv[journey_with_conv_colname]
-                self.print("Status: Done")
+                self._print("Status: Done")
 
             # conversion_value could be a single int value or a panda series
             if isinstance(conversion_value, int):
@@ -362,21 +388,21 @@ class MAM:
         ### DataFrame ###
         #################
 
-        self.DataFrame = None
-        self.as_pd_dataframe()
+        self.data_frame = None
+        # self.as_pd_dataframe()
 
     ######################################
     ##### Section 2: Output methods  #####
     ######################################
 
-    def print(self, *args, **kwargs):
+    def _print(self, *args, **kwargs):
         if self.verbose:
             print(*args, **kwargs)
 
     def as_pd_dataframe(self):
         """Return inputed attributes as a Pandas Data Frame on
         self.DataFrame."""
-        if not (isinstance(self.DataFrame, pd.DataFrame)):
+        if not isinstance(self.data_frame, pd.DataFrame):
             if isinstance(self.journey_id, pd.DataFrame):
                 self.DataFrame = self.journey_id
                 self.DataFrame["channels_agg"] = self.channels.apply(
@@ -389,22 +415,22 @@ class MAM:
                     self.df_conversion_time, on="journey_id", how="left"
                 ).rename(columns={self.session_id_col + "_conv": "session_id"})
             else:
-                self.DataFrame = pd.DataFrame(
+                self.data_frame = pd.DataFrame(
                     {
                         "journey_id": self.journey_id,
-                        "channels_agg": self.channels.apply(lambda x: self.sep.join(x)),
+                        "channels_agg": self.channels.apply(self.sep.join),
                         "converted_agg": self.journey_with_conv,
                         "conversion_value": self.conversion_value,
                     }
                 )
             if self.time_till_conv is None:
-                self.DataFrame["time_till_conv_agg"] = None
+                self.data_frame["time_till_conv_agg"] = None
             else:
-                self.DataFrame["time_till_conv_agg"] = self.time_till_conv.apply(
+                self.data_frame["time_till_conv_agg"] = self.time_till_conv.apply(
                     lambda x: self.sep.join([str(value) for value in x])
                 )
 
-        return self.DataFrame
+        return self.data_frame
 
     def attribution_all_models(
         self,
@@ -503,11 +529,11 @@ class MAM:
 
     def plot(
         self,
+        *args,
         model_type="all",
         sort_model=None,
         number_of_channels=10,
         other_df=None,
-        *args,
         **kwargs
     ):
 
@@ -538,10 +564,10 @@ class MAM:
             df_plot = other_df
 
         # Sorting self.group_by_channels_models
-        if sort_model != None:
+        if sort_model is not None:
             # List comprehension to accept regex
             df_plot = df_plot.sort_values(
-                [[x for x in df_plot.columns if (re.search(sort_model, x))]][0],
+                [[x for x in df_plot.columns if re.search(sort_model, x)]][0],
                 ascending=True,
             )
 
@@ -559,7 +585,7 @@ class MAM:
         df_plot = pd.melt(df_plot, id_vars="channels")
 
         # Plot Parameters
-        ax, fig = plt.subplots(figsize=(20, 7))
+        ax, _ = plt.subplots(figsize=(20, 7))
         ax = sns.barplot(
             data=df_plot, hue="variable", y="value", x="channels", *args, **kwargs
         )
@@ -632,9 +658,9 @@ class MAM:
         A pandas DF containing the attributed values for each channel
         """
         channels_list = []
-        self.channels.apply(lambda x: channels_list.extend(x))
+        self.channels.apply(channels_list.extend)
         values_list = []
-        channels_value.apply(lambda x: values_list.extend(x))
+        channels_value.apply(values_list.extend)
 
         frame = pd.DataFrame({"channels": channels_list, "value": values_list})
         frame = frame.groupby(["channels"])["value"].sum()
@@ -662,134 +688,134 @@ class MAM:
     def first_click_journeys(self):
         """Returns an object that contains First Click results with journey
         granularity."""
-        if self.__first_click is None:
+        if self._first_click is None:
             warnings.warn(
                 "In order to call this method, attribution_first_click method must "
                 + "be called first."
             )
         else:
-            return self.__first_click[0]
+            return self._first_click[0]
 
     def first_click_channels(self):
         """Returns an object that contains First Click results with channel
         granularity."""
-        if self.__first_click is None:
+        if self._first_click is None:
             warnings.warn(
                 "In order to call this method, attribution_first_click method must "
                 + "be called first."
             )
         else:
-            return self.__first_click[1]
+            return self._first_click[1]
 
     def last_click_journeys(self):
         """Returns an object that contains Last Click results with journey
         granularity."""
-        if self.__last_click is None:
+        if self._last_click is None:
             warnings.warn(
                 "In order to call this method, attribution_last_click method must "
                 + "be called first."
             )
         else:
-            return self.__last_click[0]
+            return self._last_click[0]
 
     def last_click_channels(self):
         """Returns an object that contains Last Click results with channel
         granularity."""
-        if self.__last_click is None:
+        if self._last_click is None:
             warnings.warn(
                 "In order to call this method, attribution_last_click method must "
                 + "be called first."
             )
         else:
-            return self.__last_click[1]
+            return self._last_click[1]
 
     def last_click_non_journeys(self):
         """Returns an object that contains Last Click ignoring a specific
         channel results with journey granularity."""
-        if self.__last_click_non is None:
+        if self._last_click_non is None:
             warnings.warn(
                 "In order to call this method, attribution_last_click_non method "
                 + "must be called first."
             )
         else:
-            return self.__last_click_non[0]
+            return self._last_click_non[0]
 
     def last_click_non_channels(self):
         """Returns an object that contains Last Click ignoring a specific
         channel results with channel granularity."""
-        if self.__last_click_non is None:
+        if self._last_click_non is None:
             warnings.warn(
                 "In order to call this method, attribution_last_click_non method "
                 + "must be called first."
             )
         else:
-            return self.__last_click_non[1]
+            return self._last_click_non[1]
 
     def linear_journeys(self):
         """Returns an object that contains Linear results with journey
         granularity."""
-        if self.__linear is None:
+        if self._linear is None:
             warnings.warn(
                 "In order to call this method, attribution_linear method must be "
                 + "called first."
             )
         else:
-            return self.__linear[0]
+            return self._linear[0]
 
     def linear_channels(self):
         """Returns an object that contains Linear results with channel
         granularity."""
-        if self.__linear is None:
+        if self._linear is None:
             warnings.warn(
                 "In order to call this method, attribution_linear method must be "
                 + "called first."
             )
         else:
-            return self.__linear[1]
+            return self._linear[1]
 
     def position_based_journeys(self):
         """Returns an object that contains Position based results with journey
         granularity."""
-        if self.__position_based is None:
+        if self._position_based is None:
             warnings.warn(
                 "In order to call this method, attribution_position_based method "
                 + "must be called first."
             )
         else:
-            return self.__position_based[0]
+            return self._position_based[0]
 
     def position_based_channels(self):
         """Returns an object that contains Position Based results with channel
         granularity."""
-        if self.__position_based is None:
+        if self._position_based is None:
             warnings.warn(
                 "In order to call this method, attribution_position_based method "
                 + "must be called first."
             )
         else:
-            return self.__position_based[1]
+            return self._position_based[1]
 
     def time_decay_journeys(self):
         """Returns an object that contains Time Decay results with journey
         granularity."""
-        if self.__time_decay is None:
+        if self._time_decay is None:
             warnings.warn(
                 "In order to call this method, attribution_time_decay method must "
                 + "be called first."
             )
         else:
-            return self.__time_decay[0]
+            return self._time_decay[0]
 
     def time_decay_channels(self):
         """Returns an object that contains Time Decay results with channel
         granularity."""
-        if self.__first_click is None:
+        if self._first_click is None:
             warnings.warn(
                 "In order to call this method, attribution_time_decay method must "
                 + "be called first"
             )
         else:
-            return self.__time_decay[1]
+            return self._time_decay[1]
 
     ###################################################
     ##### Section 3: Channel Attribution methods  #####
@@ -819,7 +845,7 @@ class MAM:
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
-        self.DataFrame[model_name] = channels_value.apply(
+        self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
 
@@ -855,9 +881,9 @@ class MAM:
         else:
             frame = "group_by_channels_models = False"
 
-        self.__last_click = (channels_value, frame)
+        self._last_click = (channels_value, frame)
 
-        return self.__last_click
+        return self._last_click
 
     def attribution_last_click_non(
         self, but_not_this_channel="Direct", group_by_channels_models=True
@@ -902,7 +928,7 @@ class MAM:
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
-        self.DataFrame[model_name] = channels_value.apply(
+        self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
 
@@ -950,9 +976,9 @@ class MAM:
                 self.group_by_channels_models = frame.reset_index()
                 self.group_by_channels_models.columns = ["channels", model_name]
 
-        self.__last_click_non = (channels_value, frame)
+        self._last_click_non = (channels_value, frame)
 
-        return self.__last_click_non
+        return self._last_click_non
 
     def attribution_first_click(self, group_by_channels_models=True):
         """The first touchpoint recieves all the credit.
@@ -980,7 +1006,7 @@ class MAM:
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
-        self.DataFrame[model_name] = channels_value.apply(
+        self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
         # Add results to original DataFrame
@@ -1013,9 +1039,9 @@ class MAM:
                 self.group_by_channels_models = frame.reset_index()
                 self.group_by_channels_models.columns = ["channels", model_name]
 
-        self.__first_click = (channels_value, frame)
+        self._first_click = (channels_value, frame)
 
-        return self.__first_click
+        return self._first_click
 
     def attribution_linear(self, group_by_channels_models=True):
         """Each touchpoint in the conversion path has an equal value.
@@ -1027,7 +1053,7 @@ class MAM:
         """
         model_name = "attribution_linear_heuristic"
 
-        channels_count = self.channels.apply(lambda x: len(x))
+        channels_count = self.channels.apply(len)
         channels_value = (
             self.conversion_value * self.journey_with_conv.apply(int) / channels_count
         ).apply(lambda x: [x]) * channels_count
@@ -1048,13 +1074,13 @@ class MAM:
         else:
             frame = "group_by_channels_models = False"
 
-        self.__linear = (channels_value, frame)
+        self._linear = (channels_value, frame)
 
-        return self.__linear
+        return self._linear
 
     def attribution_position_based(
         self,
-        list_positions_first_middle_last=[0.4, 0.2, 0.4],
+        list_positions_first_middle_last=None,
         group_by_channels_models=True,
     ):
         """First and last contact have preset values, middle touchpoints are evenly
@@ -1072,6 +1098,9 @@ class MAM:
             Will aggregate the attributed results by each channel on
             self.group_by_channels_models
         """
+        if not list_positions_first_middle_last:
+            list_positions_first_middle_last = [0.4, 0.2, 0.4]
+
         model_name = (
             "attribution_position_based_"
             + "_".join([str(value) for value in list_positions_first_middle_last])
@@ -1095,7 +1124,7 @@ class MAM:
                 [list_positions_first_middle_last[0]]
                 + [list_positions_first_middle_last[1] / (len(canais) - 2)]
                 * (len(canais) - 2)
-                + [list_positions_first_middle_last[0]]
+                + [list_positions_first_middle_last[2]]
             )
         )
         # multiplying the results with the conversion value
@@ -1107,7 +1136,7 @@ class MAM:
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
-        self.DataFrame[model_name] = channels_value.apply(
+        self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
         # Add results to original DataFrame
@@ -1119,9 +1148,9 @@ class MAM:
         else:
             frame = "group_by_channels_models = False"
 
-        self.__position_based = (channels_value, frame)
+        self._position_based = (channels_value, frame)
 
-        return self.__position_based
+        return self._position_based
 
     def attribution_position_decay(self, group_by_channels_models=True):
         """Linear decay for each touchpoint further from conversion.
@@ -1152,7 +1181,7 @@ class MAM:
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
-        self.DataFrame[model_name] = channels_value.apply(
+        self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
         # Add results to original DataFrame
@@ -1215,7 +1244,7 @@ class MAM:
 
             # Adding the results to self.DataFrame
             self.as_pd_dataframe()
-            self.DataFrame[model_name] = channels_value.apply(
+            self.data_frame[model_name] = channels_value.apply(
                 lambda x: self.sep.join([str(value) for value in x])
             )
             # Add results to original DataFrame
@@ -1229,9 +1258,9 @@ class MAM:
             else:
                 frame = "group_by_channels_models = False"
 
-        self.__time_decay = (channels_value, frame)
+        self._time_decay = (channels_value, frame)
 
-        return self.__time_decay
+        return self._time_decay
 
     def attribution_markov(
         self,
@@ -1239,39 +1268,13 @@ class MAM:
         group_by_channels_models=True,
         conversion_value_as_frequency=True,
     ):
-        """"""
+        """Attribution using Markov."""
         model_name = "attribution_markov"
         model_type = "_algorithmic"
         if transition_to_same_state:
             model_name = model_name + "_same_state" + model_type
         else:
             model_name = model_name + model_type
-
-        def power_to_infinity(matrix):
-            """Raises a square matrix to an infinite power using eigendecomposition.
-
-            All matrix rows must add to 1.
-            M = Q*L*inv(Q), where L = eigenvalue diagonal values, Q = eigenvector matrix
-            M^N = Q*(L^N)*inv(Q)
-            """
-            eigen_value, eigen_vectors = np.linalg.eig(matrix)
-
-            # At infinity everything converges to 0 or 1, thus we use np.trunc()
-            diagonal = np.diag(np.trunc(eigen_value.real + 0.001))
-            try:
-                result = (eigen_vectors @ diagonal @ np.linalg.inv(eigen_vectors)).real
-            except np.linalg.LinAlgError as err:
-                if "Singular matrix" in str(err):
-                    warnings.warn(
-                        "Warning... Singular matrix error. Check for lines or cols "
-                        + "fully filled with zeros."
-                    )
-                    result = (
-                        eigen_vectors @ diagonal @ np.linalg.pinv(eigen_vectors)
-                    ).real
-                else:
-                    raise
-            return result
 
         def normalize_rows(matrix):
             size = matrix.shape[0]
@@ -1280,9 +1283,18 @@ class MAM:
             return matrix / mean
 
         def calc_total_conversion(matrix):
-            normal_matrix = normalize_rows(matrix)
-            infinity_matrix = power_to_infinity(normal_matrix)
-            return infinity_matrix[0, -1]
+            # pylint: disable=invalid-name
+            # https://en.wikipedia.org/wiki/Absorbing_Markov_chain#Absorbing_probabilities
+            matrix = normalize_rows(matrix)
+
+            # Those indices follow from the construction, where we have the conversion
+            # and non-conversion states as the last 2
+            Q = matrix[:-2, :-2]
+            R = matrix[:-2, -2:]
+            N = np.linalg.inv(np.identity(len(Q)) - Q)
+
+            # We also assume the first row represents the starting state
+            return (N @ R)[0, 1]
 
         def removal_effect(matrix):
             size = matrix.shape[0]
@@ -1338,7 +1350,7 @@ class MAM:
 
         temp = pd.DataFrame({"orig": orig, "dest": dest, "count": conversion_quantity})
         temp = temp.groupby(["orig", "dest"], as_index=False).sum()
-        self.print(temp)
+        self._print(temp)
 
         if not transition_to_same_state:
             temp = temp[temp.orig != temp.dest]
@@ -1413,23 +1425,19 @@ class MAM:
 
         if order:
             df_temp["combinations"] = self.channels.apply(
-                lambda channels: sorted(
-                    list(set(channels)), key=lambda x: channels.index(x)
-                )
+                lambda channels: sorted(list(set(channels)), key=channels.index)
             ).copy()
         else:
             df_temp["combinations"] = self.channels.apply(
                 lambda channels: sorted(list(set(channels)))
             ).copy()
 
-        if size != None:
+        if size is not None:
             df_temp["combinations"] = df_temp["combinations"].apply(
                 lambda channels: self.sep.join(channels[size * -1 :])
             )
         else:
-            df_temp["combinations"] = df_temp["combinations"].apply(
-                lambda channels: self.sep.join(channels)
-            )
+            df_temp["combinations"] = df_temp["combinations"].apply(self.sep.join)
 
         # Adding journey_with_conv column
         df_temp["journey_with_conv"] = self.journey_with_conv.apply(int)
@@ -1452,7 +1460,7 @@ class MAM:
 
         return df_temp
 
-    def coalitions(self, size=4, unique_channels=None, order=False):
+    def coalitions(self, msize=4, unique_channels=None, order=False):
         """This function gives all the coalitions of different channels in a matrix.
         Most of the extra parameters are used when calculating Shapley's value with
         order.
@@ -1468,23 +1476,22 @@ class MAM:
         """
         if unique_channels is None:
             unique_channels = list(set(sum(self.channels.values, [])))
-        else:
-            unique_channels = unique_channels
         channels_combination = []
 
         # Creating a list with all the permutations if order is True
         if order is True:
-            for L in range(0, size + 1):
-                for subset in itertools.combinations(unique_channels, L):
+            for size in range(0, msize + 1):
+                for subset in itertools.combinations(unique_channels, size):
                     channels_combination.append(list(subset))
         else:
-            for L in range(0, size + 1):
-                for subset in itertools.combinations(sorted(unique_channels), L):
+            for size in range(0, msize + 1):
+                for subset in itertools.combinations(sorted(unique_channels), size):
                     channels_combination.append(list(subset))
 
         # Creating a DF with the channels as the boolean columns
         df_temp = pd.Series(channels_combination).to_frame(name="combinations")
         for channel in unique_channels:
+            # pylint: disable=cell-var-from-loop
             df_temp[channel] = df_temp.combinations.apply(
                 lambda channels: any(channel in s for s in channels)
             )
@@ -1542,15 +1549,7 @@ class MAM:
                     + "combination and his conv value."
                 )
             else:
-                try:
-                    merge_custom_values.columns = ["combinations", "custom_value"]
-                except:
-                    print(
-                        "merge_custom_values must have two columns only, the first "
-                        + "one representing the channels combination and the secong "
-                        + "the custom value that you want to apply..."
-                    )
-
+                merge_custom_values.columns = ["combinations", "custom_value"]
                 conv_table = pd.merge(
                     conv_table, merge_custom_values, on="combinations", how="left"
                 ).fillna(0)
@@ -1564,13 +1563,10 @@ class MAM:
         results = []
 
         for journey in channels_shapley:
-
             n = len(journey)
 
             coalitions = self.coalitions(n, journey, order=order)
-            coalitions.combinations = coalitions.combinations.apply(
-                lambda x: self.sep.join(x)
-            )
+            coalitions.combinations = coalitions.combinations.apply(self.sep.join)
             coa = (
                 coalitions[1:]
                 .drop("combinations", axis=1)
@@ -1591,7 +1587,7 @@ class MAM:
             v = valores[1:]
             coaux = coa.copy()
 
-            for line in list(range(0, ((2 ** n) - 1))):
+            for line in list(range(0, ((2**n) - 1))):
 
                 for channel in coa.columns:
                     s = len(coaux.iloc[line, :][coaux.iloc[line, :] != 0])
@@ -1623,8 +1619,7 @@ class MAM:
         if (values_col == "conv_rate") or (values_col == "custom_value"):
             conv_table[model_name] = results
             conv_table[model_name] = (
-                conv_table[model_name].apply(lambda x: np.asarray(x))
-                * conv_table["total_sequences"]
+                conv_table[model_name].apply(np.asarray) * conv_table["total_sequences"]
             )
             conv_table[model_name] = (
                 conv_table[model_name].apply(lambda x: x / x.sum())

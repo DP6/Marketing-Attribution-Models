@@ -1,6 +1,6 @@
 from setuptools import setup
 
-with open("README.md", "r") as f:
+with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
     # substitute relative image path by absolute ones
     long_description = long_description.replace(
@@ -8,15 +8,17 @@ with open("README.md", "r") as f:
         "https://raw.githubusercontent.com/DP6/Marketing-Attribution-Models/master/readme-images/",
     )
 
+__version__ = "1.0.8"
 setup(
     name="marketing_attribution_models",
-    version="1.0.8",
+    version=__version__,
     description="Metodos de atribuicao de midia",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Andre Tocci",
     author_email="andre.tocci@dp6.com.br",
     url="https://github.com/DP6/Marketing-Attribution-Models",
+    project_urls={"Source": "https://dp6.github.io/Marketing-Attribution-Models"},
     packages=["marketing_attribution_models"],
     install_requires=[
         "numpy",

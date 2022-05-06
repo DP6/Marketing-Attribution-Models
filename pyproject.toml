@@ -1,0 +1,7 @@
+[tool.semantic_release]
+branch = 'master'
+version_variable = [
+  'setup.py:__version__'
+]
+version_source = 'tag'
+build_command = false

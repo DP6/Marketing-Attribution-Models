@@ -1,8 +1,6 @@
 *.pyc
 *.swp
 *~
-Pipfile
-Pipfile.lock
 dist/*
 build/*
 *.egg-info/*
