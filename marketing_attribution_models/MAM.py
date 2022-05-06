@@ -1,3 +1,7 @@
+from typing import List, Union
+
+import numpy as np
+import pandas as pd
 import itertools
 import math
 import random
@@ -23,6 +27,8 @@ class MAM:
     Parameters:
     df = None by default, but should only be None if choosing to use a random dataframe.
          Otherwise, it has to receive a Pandas dataframe;
+    attribution_window = 30 by default.
+        Number of days before the conversion to be considered.
     time_till_conv_colname = None by default.
         Column name in the df containing the time in hours untill the
         moment of the conversion. The column must have the same elements as the
@@ -30,6 +36,8 @@ class MAM:
         If your session is crashing here, try setting the variable
         time_till_conv_colname equal to 'skip_column'. But skipping this column you will
         not be able to run all the models in this class
+    round_values_to = 4 by default.
+        Round the values of the attribution models to this number of decimals.
     conversion_value = 1 by default.
         Integer that represents a monetary value of a 'conversion', can also receive a
         string indicating the column name on the dataframe containing the conversion
@@ -65,28 +73,30 @@ class MAM:
     def __init__(
         self,
         df=None,
-        time_till_conv_colname=None,
-        conversion_value=1,
-        channels_colname=None,
-        journey_with_conv_colname=None,
-        group_channels=False,
-        group_channels_by_id_list=None,
-        group_timestamp_colname=None,
-        create_journey_id_based_on_conversion=False,
-        path_separator=" > ",
-        verbose=False,
-        random_df=False,
+        attribution_window: int = 30,
+        session_id_col: str = "session_id",
+        time_till_conv_colname: str = None,
+        round_values_to: int = 4,
+        conversion_value: int = 1,
+        channels_colname: str = None,
+        journey_with_conv_colname: str = None,
+        group_channels: bool = False,
+        group_channels_by_id_list: List = [],
+        group_timestamp_colname: str = None,
+        create_journey_id_based_on_conversion: bool = False,
+        path_separator: str = " > ",
+        verbose: bool = False,
+        random_df: bool = False,
     ):
         if not group_channels_by_id_list:
             group_channels_by_id_list = []
 
+        self.attribution_window = attribution_window * 24  # number of hours, actually
+        self.session_id_col = session_id_col
         self.verbose = verbose
         self.sep = path_separator
         self.group_by_channels_models = None
-        # self.decode_channels = None
-
-        if group_channels_by_id_list is None:
-            group_channels_by_id_list = []
+        self.round_values_to = round_values_to
 
         ##########################################################
         ################## Instance attributes ###################
@@ -132,6 +142,7 @@ class MAM:
             df_temp["journey_id"] = (
                 df_temp["journey_id"].where(~df_temp[transaction_colname], t).apply(str)
             )
+            df_temp["journey_rnk"] = df_temp["journey_id"].astype("int")
             df_temp["journey_id"] = (
                 "id:" + df_temp[group_id[0]] + "_J:" + df_temp["journey_id"]
             )
@@ -230,6 +241,7 @@ class MAM:
             df.sort_values(
                 group_channels_by_id_list + [group_timestamp_colname], inplace=True
             )
+            self.original_df = df.copy()
 
             if create_journey_id_based_on_conversion:
 
@@ -238,44 +250,97 @@ class MAM:
                     group_id=group_channels_by_id_list,
                     transaction_colname=journey_with_conv_colname,
                 )
-                group_channels_by_id_list = ["journey_id"]
-
-            # Grouping channels based on group_channels_by_id_list
-            ######################################################
-
-            self._print("group_channels == True")
-            self._print("Grouping channels...")
-            temp_channels = (
-                df.groupby(group_channels_by_id_list)[channels_colname]
-                .apply(list)
-                .reset_index()
-            )
-            self.channels = temp_channels[channels_colname]
-            self._print("Status: Done")
+                group_channels_by_id_list = [
+                    "journey_id",
+                    "journey_rnk",
+                ] + group_channels_by_id_list
 
             # Grouping timestamp based on group_channels_by_id_list
             ####################################################
-            self._print("Grouping timestamp...")
-            df_temp = df[group_channels_by_id_list + [group_timestamp_colname]]
+            self.print("Grouping timestamp...")
+            df_temp = df[
+                group_channels_by_id_list + [session_id_col, group_timestamp_colname]
+            ]
+            # mantém NaN nos casos em que não teve conversão
             df_temp = df_temp.merge(
-                df.groupby(group_channels_by_id_list)[group_timestamp_colname].max(),
+                df[df[journey_with_conv_colname]]
+                .groupby(group_channels_by_id_list)
+                .agg({group_timestamp_colname: "max", session_id_col: "min"}),
                 on=group_channels_by_id_list,
+                how="left",
             )
-
             # calculating the time till conversion
             ######################################
             df_temp["time_till_conv"] = (
                 df_temp[group_timestamp_colname + "_y"]
                 - df_temp[group_timestamp_colname + "_x"]
-            ).astype("timedelta64[h]")
+            ).astype("timedelta64[s]") / 3600
+            df_temp["time_till_conv"] = df_temp["time_till_conv"].round(4)
+            df_temp.rename(
+                columns={
+                    group_timestamp_colname + "_y": "conversion_time",
+                    session_id_col + "_y": session_id_col + "_conv",
+                    session_id_col + "_x": session_id_col,
+                },
+                inplace=True,
+            )
+
+            # filter by attribution window
+            df_temp = df_temp[
+                (df_temp.time_till_conv.isnull())
+                | (df_temp.time_till_conv <= self.attribution_window)
+            ]
+            valid_sessions = df_temp[
+                session_id_col
+            ]  # only sessions in attribution window
+
+            self.df_conversion_time = df_temp[~df_temp.conversion_time.isnull()][
+                ["journey_id", "conversion_time", session_id_col + "_conv"]
+            ].drop_duplicates()
+
+            # merge time till conv into original df
+            self.original_df = (
+                self.original_df.merge(
+                    df_temp[[session_id_col, "time_till_conv"]],
+                    on=session_id_col,
+                    how="inner",
+                )
+                .drop_duplicates()
+                .reset_index(drop=True)
+            )
 
             df_temp = (
-                df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
+                df_temp.groupby(group_channels_by_id_list, sort=False)["time_till_conv"]
                 .apply(list)
                 .reset_index()
             )
             self.time_till_conv = df_temp["time_till_conv"]
             self._print("Status: Done")
+
+            # Filter whole df by valid sessions
+            df = df[df[session_id_col].isin(valid_sessions)]
+
+            # Grouping sessions based on group_channels_by_id_list
+            ######################################################
+            sessions = (
+                df.groupby(group_channels_by_id_list, sort=False)[session_id_col]
+                .apply(list)
+                .reset_index()
+            )
+            self.sessions = sessions[session_id_col]
+
+            # Grouping channels based on group_channels_by_id_list
+            ######################################################
+
+            self.print("group_channels == True")
+            self.print("Grouping channels...")
+            temp_channels = (
+                df.groupby(group_channels_by_id_list, sort=False)[channels_colname]
+                .apply(list)
+                .reset_index()
+            )
+            self.channels = temp_channels[channels_colname]
+            self.print("Status: Done")
 
             if journey_with_conv_colname is None:
 
@@ -291,8 +356,11 @@ class MAM:
                 ##########################################################
                 self._print("Grouping journey_id and journey_with_conv...")
                 df_temp = df[group_channels_by_id_list + [journey_with_conv_colname]]
+                # df_temp = df[group_channels_by_id_list + [journey_with_conv_colname]][
+                #     df[session_id_col].isin(valid_sessions)
+                # ]
                 temp_journey_id_conv = (
-                    df_temp.groupby(group_channels_by_id_list)[
+                    df_temp.groupby(group_channels_by_id_list, sort=False)[
                         journey_with_conv_colname
                     ]
                     .max()
@@ -315,83 +383,6 @@ class MAM:
                     .reset_index()[conversion_value]
                 )
 
-        #################################
-        #### group_channels == False ####
-        #################################
-        else:
-            # df = df.reset_index().copy()
-            self.journey_id = df[group_channels_by_id_list]
-            self._print("Status_journey_id: Done")
-
-            #####################
-            ### self.channels ###
-            #####################
-
-            # converts channels str to list of channels
-            if isinstance(df[channels_colname].iloc[0], str):
-                self._print("Status_journey_to_list: Working")
-                self.channels = df[channels_colname].apply(lambda x: x.split(self.sep))
-                self._print("Status_journey_to_list: Done")
-            else:
-                self.channels = df[channels_colname]
-                self._print("Status_journey_to_list: Skipped")
-
-            ###########################
-            ### self.time_till_conv ###
-            ###########################
-            if time_till_conv_colname is None:
-                self._print(
-                    "If your session is crashing here, try setting the variable "
-                    + "time_till_conv_colname equal to skip_column"
-                )
-                self.time_till_conv = self.channels.apply(
-                    lambda x: list(range(len(x)))[::-1]
-                )
-                self.time_till_conv = self.time_till_conv.apply(
-                    lambda x: list(np.asarray(x) * 24)
-                )
-            else:
-                if time_till_conv_colname == "skip_column":
-                    self.time_till_conv = None
-                    print(
-                        "Skipping this column you will not be able to run all the "
-                        + "models in this class"
-                    )
-                else:
-                    if isinstance(df[channels_colname].iloc[0], str):
-                        self.time_till_conv = df[time_till_conv_colname].apply(
-                            lambda x: [float(value) for value in x.split(self.sep)]
-                        )
-                    else:
-                        self.time_till_conv = df[time_till_conv_colname]
-            self._print("Status_time_till_conv: Done")
-
-            ##############################
-            ### self.journey_with_conv ###
-            ##############################
-            if journey_with_conv_colname is None:
-                self.journey_with_conv = self.channels.apply(lambda x: True)
-            else:
-                self.journey_with_conv = df[journey_with_conv_colname]
-            self._print("Status_journey_with_conv: Done")
-
-            ########################
-            ### conversion_value ###
-            ########################
-
-            # conversion_value could be a single int value or a panda series
-            if isinstance(conversion_value, int):
-                self.conversion_value = self.journey_with_conv.apply(
-                    lambda valor: conversion_value if valor else 0
-                )
-            else:
-                self.conversion_value = df[conversion_value]
-
-        # if conversion_null_value is None:
-        #   self.conversion_null_value = None
-        # elif isinstance(conversion_value, str):
-        #   self.conversion_null_value = df[conversion_null_value]
-
         #################
         ### DataFrame ###
         #################
@@ -412,10 +403,16 @@ class MAM:
         self.DataFrame."""
         if not isinstance(self.data_frame, pd.DataFrame):
             if isinstance(self.journey_id, pd.DataFrame):
-                self.data_frame = self.journey_id
-                self.data_frame["channels_agg"] = self.channels.apply(self.sep.join)
-                self.data_frame["converted_agg"] = self.journey_with_conv
-                self.data_frame["conversion_value"] = self.conversion_value
+                self.DataFrame = self.journey_id
+                self.DataFrame["channels_agg"] = self.channels.apply(
+                    lambda x: self.sep.join(x)
+                )
+                self.DataFrame["sessions_agg"] = self.sessions
+                self.DataFrame["converted_agg"] = self.journey_with_conv
+                self.DataFrame["conversion_value"] = self.conversion_value
+                self.DataFrame = self.DataFrame.merge(
+                    self.df_conversion_time, on="journey_id", how="left"
+                ).rename(columns={self.session_id_col + "_conv": "session_id"})
             else:
                 self.data_frame = pd.DataFrame(
                     {
@@ -436,7 +433,8 @@ class MAM:
 
     def attribution_all_models(
         self,
-        model_type="all",
+        model_type: str = "all",
+        exclude_models: list = None,
         last_click_non_but_not_this_channel="Direct",
         time_decay_decay_over_time=0.5,
         time_decay_frequency=128,
@@ -455,9 +453,9 @@ class MAM:
            - attribution_position_based
            - attribution_time_decay
         Parameters:
-        model_type = ['all',
+        model_type = 'all',
                      'heuristic',
-                     'algorithmic']
+                     'algorithmic'
         """
 
         if model_type == "all":
@@ -472,49 +470,59 @@ class MAM:
 
         if heuristic:
             # Running attribution_last_click
-            self.attribution_last_click(
-                group_by_channels_models=group_by_channels_models
-            )
+            if "attribution_last_click" not in exclude_models:
+                self.attribution_last_click(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_last_click_non
-            self.attribution_last_click_non(
-                but_not_this_channel=last_click_non_but_not_this_channel
-            )
+            if "attribution_last_click_non" not in exclude_models:
+                self.attribution_last_click_non(
+                    but_not_this_channel=last_click_non_but_not_this_channel
+                )
 
             # Running attribution_first_click
-            self.attribution_first_click(
-                group_by_channels_models=group_by_channels_models
-            )
+            if "attribution_first_click" not in exclude_models:
+                self.attribution_first_click(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_linear
-            self.attribution_linear(group_by_channels_models=group_by_channels_models)
+            if "attribution_linear" not in exclude_models:
+                self.attribution_linear(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_position_based
-            self.attribution_position_based(
-                group_by_channels_models=group_by_channels_models
-            )
+            if "attribution_position_based" not in exclude_models:
+                self.attribution_position_based(
+                    group_by_channels_models=group_by_channels_models
+                )
 
             # Running attribution_time_decay
-            self.attribution_time_decay(
-                decay_over_time=time_decay_decay_over_time,
-                frequency=time_decay_frequency,
-                group_by_channels_models=group_by_channels_models,
-            )
+            if "attribution_time_decay" not in exclude_models:
+                self.attribution_time_decay(
+                    decay_over_time=time_decay_decay_over_time,
+                    frequency=time_decay_frequency,
+                    group_by_channels_models=group_by_channels_models,
+                )
 
         if algorithmic:
 
             # Running attribution_shapley
-            self.attribution_shapley(
-                size=shapley_size,
-                order=shapley_order,
-                group_by_channels_models=group_by_channels_models,
-                values_col=shapley_values_col,
-            )
+            if "attribution_shapley" not in exclude_models:
+                self.attribution_shapley(
+                    size=shapley_size,
+                    order=shapley_order,
+                    group_by_channels_models=group_by_channels_models,
+                    values_col=shapley_values_col,
+                )
 
-            # Running attribution_shapley
-            self.attribution_markov(
-                transition_to_same_state=markov_transition_to_same_state
-            )
+            # Running attribution markov
+            if "attribution_markov" not in exclude_models:
+                self.attribution_markov(
+                    transition_to_same_state=markov_transition_to_same_state
+                )
 
         return self.group_by_channels_models
 
@@ -840,6 +848,9 @@ class MAM:
             lambda x: self.sep.join([str(value) for value in x])
         )
 
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
+
         # Results part 2: Results
         if group_by_channels_models:
 
@@ -920,6 +931,9 @@ class MAM:
             lambda x: self.sep.join([str(value) for value in x])
         )
 
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
+
         # Results part 2: Results
         if group_by_channels_models:
 
@@ -994,6 +1008,8 @@ class MAM:
         self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Results part 2: Grouped Results
         #################################
@@ -1043,9 +1059,13 @@ class MAM:
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
-        self.data_frame[model_name] = channels_value.apply(
-            lambda x: self.sep.join([str(value) for value in x])
+        self.DataFrame[model_name] = channels_value.apply(
+            lambda x: self.sep.join(
+                [str(round(value, self.round_values_to)) for value in x]
+            )
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         if group_by_channels_models:
@@ -1118,6 +1138,8 @@ class MAM:
         self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         if group_by_channels_models:
@@ -1161,6 +1183,8 @@ class MAM:
         self.data_frame[model_name] = channels_value.apply(
             lambda x: self.sep.join([str(value) for value in x])
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         if group_by_channels_models:
@@ -1171,7 +1195,7 @@ class MAM:
         return (channels_value, frame)
 
     def attribution_time_decay(
-        self, decay_over_time=0.5, frequency=168, group_by_channels_models=True
+        self, decay_over_time=0.5, frequency=24, group_by_channels_models=True
     ):
         """Decays for each touchpoint further from conversion.
 
@@ -1221,6 +1245,10 @@ class MAM:
             self.as_pd_dataframe()
             self.data_frame[model_name] = channels_value.apply(
                 lambda x: self.sep.join([str(value) for value in x])
+            )
+            # Add results to original DataFrame
+            self.original_df[model_name] = channels_value.explode().reset_index(
+                drop=True
             )
 
             # Grouping the attributed values for each channel
@@ -1358,9 +1386,13 @@ class MAM:
 
         # Adding the results to self.DataFrame
         self.as_pd_dataframe()
-        self.data_frame[model_name] = channels_value.apply(
-            lambda x: self.sep.join([str(value) for value in x])
+        self.DataFrame[model_name] = channels_value.apply(
+            lambda x: self.sep.join(
+                [str(round(value, self.round_values_to)) for value in x]
+            )
         )
+        # Add results to original DataFrame
+        self.original_df[model_name] = channels_value.explode().reset_index(drop=True)
 
         # Grouping the attributed values for each channel
         total_conv_value = self.journey_with_conv * self.conversion_value
@@ -1554,7 +1586,7 @@ class MAM:
             v = valores[1:]
             coaux = coa.copy()
 
-            for line in list(range(0, ((2**n) - 1))):
+            for line in list(range(0, ((2 ** n) - 1))):
 
                 for channel in coa.columns:
                     s = len(coaux.iloc[line, :][coaux.iloc[line, :] != 0])
