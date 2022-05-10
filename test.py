@@ -46,7 +46,7 @@ df.user_pseudo_id = df.user_pseudo_id.astype("str")
 
 df.head()
 
-DP_tribution = MAM(
+model = MAM(
     df,
     attribution_window=30,
     channels_colname="source_medium",
@@ -57,11 +57,12 @@ DP_tribution = MAM(
     create_journey_id_based_on_conversion=True,
 )
 
-DP_tribution.as_pd_dataframe()
+model.as_pd_dataframe()
 
-DP_tribution.attribution_last_click()
-DP_tribution.attribution_time_decay()
+model.attribution_linear()
+# model.attribution_time_decay()
+model.attribution_markov(transition_to_same_state=False)
 
-print(DP_tribution.DataFrame)
+print(model.DataFrame.head())
 
-print(DP_tribution.original_df)
+print(model.original_df.head())
