@@ -1,4 +1,5 @@
 from typing import List, Union
+import numpy.typing as npt
 
 import numpy as np
 import pandas as pd
@@ -1273,18 +1274,18 @@ class MAM:
                     raise
             return result
 
-        def normalize_rows(matrix):
+        def normalize_rows(matrix: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
             size = matrix.shape[0]
             mean = matrix.sum(axis=1).reshape((size, 1))
             mean = np.where(mean == 0, 1, mean)
             return matrix / mean
 
-        def calc_total_conversion(matrix):
+        def calc_total_conversion(matrix) -> float:
             normal_matrix = normalize_rows(matrix)
             infinity_matrix = power_to_infinity(normal_matrix)
             return infinity_matrix[0, -1]
 
-        def removal_effect(matrix):
+        def removal_effect(matrix) -> npt.NDArray[np.float64]:
             size = matrix.shape[0]
             conversions = np.zeros(size)
             for column in range(1, size - 2):
@@ -1292,10 +1293,10 @@ class MAM:
                 temp[:, -2] = temp[:, -2] + temp[:, column]
                 temp[:, column] = 0
                 conversions[column] = calc_total_conversion(temp)
-            conversion_orig = calc_total_conversion(matrix)
+            conversion_orig: float = calc_total_conversion(matrix)
             return 1 - (conversions / conversion_orig)
 
-        def path_to_matrix(paths):
+        def path_to_matrix(paths: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
             channel_max = int(paths[:, 0:2].max()) + 1
             matrix = np.zeros((channel_max, channel_max), dtype="float")
             for x, y, val in paths:
