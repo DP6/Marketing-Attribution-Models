@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 
-plt.style.use("seaborn-white")
+plt.style.use("fivethirtyeight")
 
 
 class MAM:
