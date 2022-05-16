@@ -16,7 +16,7 @@ plt.style.use("fivethirtyeight")
 class MAM:
     """MAM (Marketing Attribution Models) is a class inspired on the R Package.
 
-    ‘GameTheoryAllocation’ from Alejandro Saavedra-Nieves and ‘ChannelAttribution’ from
+    `GameTheoryAllocation` from Alejandro Saavedra-Nieves and `ChannelAttribution` from
     Davide Altomare and David Loris that was created to bring these concepts to Python
     and to help us understand how the different marketing channels behave during the
     customer journey.
