@@ -13,11 +13,11 @@ pd.set_option("max_colwidth", None)
 users = [
     # "1472526294.1645135142",
     "1317354717.1641321280",
-    # "679601293.1636465111"
+    # "679601293.1636465111",
 ]
 
 df = pd.read_csv(
-    "/home/luanfernandes/Downloads/sessions-full.csv",
+    "/home/luanfernandes/Downloads/sessions.csv",
     dtype={
         "user_pseudo_id": str,
         "session_id": str,
@@ -28,7 +28,7 @@ df = pd.read_csv(
     },
     parse_dates=True,
 )
-df = df[df.user_pseudo_id.isin(users)].sample(frac=1.0)
+# df = df[df.user_pseudo_id.isin(users)].sample(frac=1.0)
 
 df = df.drop(
     columns=[
