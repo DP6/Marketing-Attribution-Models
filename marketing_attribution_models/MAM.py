@@ -1237,7 +1237,7 @@ class MAM:
         self,
         transition_to_same_state=False,
         group_by_channels_models=True,
-        conversion_value_as_frequency=True,
+        conversion_value_as_frequency=False,
     ):
         """"""
         model_name = "attribution_markov"
@@ -1320,7 +1320,9 @@ class MAM:
         temp.apply(save_orig_dest)
 
         # copying conversion_quantity to each new row
-        if type(self.conversion_value) in (int, float):
+        if np.issubdtype(
+            self.conversion_value.dtype, np.float
+        ):
             # we do not hava a frequency column yet so we are using
             # self.conversion_value.apply(lambda x: 1) to count each line
             conversion_quantity = self.conversion_value.apply(lambda x: 1)
