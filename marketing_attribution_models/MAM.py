@@ -1369,7 +1369,8 @@ class MAM:
 
         # Apply weights back to each journey
         chmap = {a: b[0] for a, b in zip(frame.index.values, frame.values)}
-        channels_value = self.channels.apply(lambda y: [chmap[x] for x in y])
+        _df = pd.concat([self.channels, self.conversion_value], axis=1)
+        channels_value = _df.apply(lambda row: [chmap[x] * row.is_conversion for x in row.source_medium], axis=1)
         channels_value = channels_value.apply(lambda x: list(np.array(x) / sum(x)))
 
         # Adding the results to self.DataFrame
