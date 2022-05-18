@@ -1319,7 +1319,7 @@ class MAM:
         temp.apply(save_orig_dest)
 
         # copying conversion_quantity to each new row
-        if np.issubdtype(self.conversion_value.dtype, np.float):
+        if np.issubdtype(self.conversion_value.dtype, float):
             # we do not hava a frequency column yet so we are using
             # self.conversion_value.apply(lambda x: 1) to count each line
             conversion_quantity = self.conversion_value.apply(lambda x: 1)
