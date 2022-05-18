@@ -1241,10 +1241,7 @@ class MAM:
     ):
         model_name = "attribution_markov"
         model_type = "_algorithmic"
-        if transition_to_same_state:
-            model_name = model_name + "_same_state" + model_type
-        else:
-            model_name = model_name + model_type
+        model_name = model_name + model_type
 
         def power_to_infinity(matrix):
             """Raises a square matrix to an infinite power using eigendecomposition.
