@@ -7,5 +7,4 @@ jobs:
       - uses: actions/checkout@v2
       - uses: psf/black@stable
         with:
-          options: "--check"
           version: "22.3.0"
