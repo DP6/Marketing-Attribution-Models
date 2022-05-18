@@ -79,7 +79,7 @@ def test_linear(model_fixture):
     )
 
 
-def test_tim_decay(model_fixture):
+def test_time_decay(model_fixture):
     model: MAM = model_fixture()
     result: pd.Series = model.attribution_time_decay()[0]
     assert_series_equal(
