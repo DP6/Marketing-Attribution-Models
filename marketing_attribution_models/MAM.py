@@ -1,21 +1,24 @@
 from typing import List, Union
-
-import numpy as np
-import pandas as pd
+import warnings
 import itertools
 import math
 import re
+
+import numpy.typing as npt
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import warnings
 
-plt.style.use("seaborn-white")
+plt.style.use("fivethirtyeight")
+
+from marketing_attribution_models.utils import reduce_mem_usage
 
 
 class MAM:
     """MAM (Marketing Attribution Models) is a class inspired on the R Package.
 
-    ‘GameTheoryAllocation’ from Alejandro Saavedra-Nieves and ‘ChannelAttribution’ from
+    `GameTheoryAllocation` from Alejandro Saavedra-Nieves and `ChannelAttribution` from
     Davide Altomare and David Loris that was created to bring these concepts to Python
     and to help us understand how the different marketing channels behave during the
     customer journey.
@@ -208,9 +211,7 @@ class MAM:
         ################################
 
         if group_channels:
-
-            # Copying, sorting and converting variables
-            df = df.reset_index().copy()
+            # Sorting and converting variables
             df[group_timestamp_colname] = pd.to_datetime(df[group_timestamp_colname])
             df.sort_values(
                 group_channels_by_id_list + [group_timestamp_colname], inplace=True
@@ -228,6 +229,8 @@ class MAM:
                     "journey_id",
                     "journey_rnk",
                 ] + group_channels_by_id_list
+                # Reduce memory consumption
+                reduce_mem_usage(df)
 
             # Grouping timestamp based on group_channels_by_id_list
             ####################################################
@@ -357,7 +360,6 @@ class MAM:
                     .reset_index()[conversion_value]
                 )
 
-    
         #################
         ### DataFrame ###
         #################
@@ -1237,15 +1239,11 @@ class MAM:
         self,
         transition_to_same_state=False,
         group_by_channels_models=True,
-        conversion_value_as_frequency=True,
+        conversion_value_as_frequency=False,
     ):
-        """"""
         model_name = "attribution_markov"
         model_type = "_algorithmic"
-        if transition_to_same_state:
-            model_name = model_name + "_same_state" + model_type
-        else:
-            model_name = model_name + model_type
+        model_name = model_name + model_type
 
         def power_to_infinity(matrix):
             """Raises a square matrix to an infinite power using eigendecomposition.
@@ -1273,18 +1271,18 @@ class MAM:
                     raise
             return result
 
-        def normalize_rows(matrix):
+        def normalize_rows(matrix: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
             size = matrix.shape[0]
             mean = matrix.sum(axis=1).reshape((size, 1))
             mean = np.where(mean == 0, 1, mean)
             return matrix / mean
 
-        def calc_total_conversion(matrix):
+        def calc_total_conversion(matrix) -> float:
             normal_matrix = normalize_rows(matrix)
             infinity_matrix = power_to_infinity(normal_matrix)
             return infinity_matrix[0, -1]
 
-        def removal_effect(matrix):
+        def removal_effect(matrix) -> npt.NDArray[np.float64]:
             size = matrix.shape[0]
             conversions = np.zeros(size)
             for column in range(1, size - 2):
@@ -1292,10 +1290,10 @@ class MAM:
                 temp[:, -2] = temp[:, -2] + temp[:, column]
                 temp[:, column] = 0
                 conversions[column] = calc_total_conversion(temp)
-            conversion_orig = calc_total_conversion(matrix)
+            conversion_orig: float = calc_total_conversion(matrix)
             return 1 - (conversions / conversion_orig)
 
-        def path_to_matrix(paths):
+        def path_to_matrix(paths: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
             channel_max = int(paths[:, 0:2].max()) + 1
             matrix = np.zeros((channel_max, channel_max), dtype="float")
             for x, y, val in paths:
@@ -1320,7 +1318,7 @@ class MAM:
         temp.apply(save_orig_dest)
 
         # copying conversion_quantity to each new row
-        if type(self.conversion_value) in (int, float):
+        if np.issubdtype(self.conversion_value.dtype, float):
             # we do not hava a frequency column yet so we are using
             # self.conversion_value.apply(lambda x: 1) to count each line
             conversion_quantity = self.conversion_value.apply(lambda x: 1)
@@ -1370,7 +1368,11 @@ class MAM:
 
         # Apply weights back to each journey
         chmap = {a: b[0] for a, b in zip(frame.index.values, frame.values)}
-        channels_value = self.channels.apply(lambda y: [chmap[x] for x in y])
+        _df = pd.concat([self.channels, self.conversion_value], axis=1)
+        channels_value = _df.apply(
+            lambda row: [chmap[x] * row.is_conversion for x in row.source_medium],
+            axis=1,
+        )
         channels_value = channels_value.apply(lambda x: list(np.array(x) / sum(x)))
 
         # Adding the results to self.DataFrame
@@ -1505,7 +1507,7 @@ class MAM:
         It was named in honor of Lloyd Shapley, who introduced it in 1953. To each
         cooperative game it assigns a unique distribution (among the players) of a total
         surplus generated by the coalition of all players. Here in the context of
-        marketing channels we can use the model to understand the valeu of the
+        marketing channels we can use the model to understand the value of the
         cooperation of channels to generate a conversion.
 
         Parameters:
@@ -1591,7 +1593,7 @@ class MAM:
             v = valores[1:]
             coaux = coa.copy()
 
-            for line in list(range(0, ((2 ** n) - 1))):
+            for line in list(range(0, ((2**n) - 1))):
 
                 for channel in coa.columns:
                     s = len(coaux.iloc[line, :][coaux.iloc[line, :] != 0])

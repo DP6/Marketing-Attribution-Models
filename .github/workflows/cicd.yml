@@ -1,0 +1,37 @@
+name: Lint and Tests
+on:
+  push:
+    branches:    
+      - stable-version
+      - master
+      - dev
+  pull_request:
+    branches:    
+      - stable-version
+      - master
+      - dev
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
+        with:
+          version: "22.3.0"
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.9.x
+        uses: actions/setup-python@v3
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.9.x'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest
+          pip install -r requirements.txt
+      - name: Test with pytest
+        run: |
+          pytest
