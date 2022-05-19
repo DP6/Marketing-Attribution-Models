@@ -1,16 +1,18 @@
 from typing import List, Union
-import numpy.typing as npt
-
-import numpy as np
-import pandas as pd
+import warnings
 import itertools
 import math
 import re
+
+import numpy.typing as npt
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import warnings
 
 plt.style.use("fivethirtyeight")
+
+from marketing_attribution_models.utils import reduce_mem_usage
 
 
 class MAM:
@@ -209,7 +211,6 @@ class MAM:
         ################################
 
         if group_channels:
-
             # Sorting and converting variables
             df[group_timestamp_colname] = pd.to_datetime(df[group_timestamp_colname])
             df.sort_values(
@@ -228,6 +229,8 @@ class MAM:
                     "journey_id",
                     "journey_rnk",
                 ] + group_channels_by_id_list
+                # Reduce memory consumption
+                reduce_mem_usage(df)
 
             # Grouping timestamp based on group_channels_by_id_list
             ####################################################

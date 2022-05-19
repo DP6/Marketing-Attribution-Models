@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
+import re
 
 
 def reduce_mem_usage(df: pd.DataFrame, inplace=True) -> pd.DataFrame:
     """
-    Reduce memory of a dataframe by adapting its column dtypes.
+    Reduce memory of a dataframe by adapting its column dtypes for numeric data.
     Reference:
         https://www.mikulskibartosz.name/how-to-reduce-memory-usage-in-pandas/
     """
@@ -16,10 +17,10 @@ def reduce_mem_usage(df: pd.DataFrame, inplace=True) -> pd.DataFrame:
     for col in df.columns:
         col_type = df[col].dtype
 
-        if col_type != object:
+        if re.search("(int)|(float)", str(col_type)):
             c_min = df[col].min()
             c_max = df[col].max()
-            if str(col_type)[:3] == "int":
+            if re.search("int", str(col_type)):
                 if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
                     df[col] = df[col].astype(np.int8)
                 elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
@@ -41,8 +42,6 @@ def reduce_mem_usage(df: pd.DataFrame, inplace=True) -> pd.DataFrame:
                     df[col] = df[col].astype(np.float32)
                 else:
                     df[col] = df[col].astype(np.float64)
-        else:
-            df[col] = df[col].astype("category")
 
     end_mem = df.memory_usage().sum() / 1024**2
     print("Memory usage after optimization is: {:.2f} MB".format(end_mem))
