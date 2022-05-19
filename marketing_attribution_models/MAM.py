@@ -210,8 +210,7 @@ class MAM:
 
         if group_channels:
 
-            # Copying, sorting and converting variables
-            df = df.reset_index().copy()
+            # Sorting and converting variables
             df[group_timestamp_colname] = pd.to_datetime(df[group_timestamp_colname])
             df.sort_values(
                 group_channels_by_id_list + [group_timestamp_colname], inplace=True
