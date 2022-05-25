@@ -510,7 +510,7 @@ class MAM:
         number_of_channels=10,
         other_df=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
 
         """Barplot of the results that were generated and stored on the
@@ -1660,3 +1660,44 @@ class MAM:
             frame = "group_by_channels_models=False"
 
         return (conv_table, frame)
+
+    def plot_attributions(
+        self,
+        sort_by_col: str = None,
+        number_of_channels: int = 10,
+        avoid_models: List = None,
+        **kwargs,
+    ):
+        """
+        Plot the attributions of the channels. Does not work yet for shapley.
+        """
+
+        df = self.group_by_channels_models.copy()
+        if avoid_models:
+            df = df.drop(columns=avoid_models)
+        for col in df.columns[1:]:
+            df["perc_" + col] = (df[col] / df[col].sum()).round(4)
+
+        # Sorting self.group_by_channels_models
+        if sort_by_col != None:
+            df.sort_values(by=sort_by_col, ascending=False, inplace=True)
+
+        df = df[["channels"] + [c for c in df.columns if "perc_" in c]]
+
+        # Subsetting the results based on the number of channels to be shown
+        df = df.head(number_of_channels)
+
+        # Melting DF so the results are devided into 'channels', 'variable' and 'value'
+        df_plot = pd.melt(df, id_vars="channels")
+
+        # Plot Parameters
+        sns.barplot(data=df_plot, hue="variable", x="value", y="channels", **kwargs)
+        ax.grid(color="gray", linestyle=":", linewidth=1, axis="both")
+        ax.set_title(
+            f"Attribution Models\n(top {number_of_channels}, sorted desc by {re.sub('attribution_', '', sort_by_col)})"
+        )
+        ax.set_frame_on(False)
+        ax.set_xticks(np.arange(0.0, 1.0, 0.05))
+        plt.tight_layout()
+
+        return df
