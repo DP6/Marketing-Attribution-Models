@@ -8,6 +8,7 @@ import numpy.typing as npt
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.axes._subplots import AxesSubplot
 import seaborn as sns
 
 plt.style.use("fivethirtyeight")
@@ -1670,6 +1671,7 @@ class MAM:
         sort_by_col: str = None,
         number_of_channels: int = 10,
         avoid_models: List = None,
+        ax: AxesSubplot = None,
         **kwargs,
     ):
         """
@@ -1696,6 +1698,8 @@ class MAM:
 
         # Plot Parameters
         sns.barplot(data=df_plot, hue="variable", x="value", y="channels", **kwargs)
+        if not ax:
+            f, ax = plt.subplots(1,1,figsize=(15,10))
         ax.grid(color="gray", linestyle=":", linewidth=1, axis="both")
         ax.set_title(
             f"Attribution Models\n(top {number_of_channels}, sorted desc by {re.sub('attribution_', '', sort_by_col)})"
