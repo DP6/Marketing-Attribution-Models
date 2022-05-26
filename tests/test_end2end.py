@@ -4,6 +4,7 @@ from typing import Tuple, Any
 import pandas as pd
 from pandas.testing import assert_series_equal, assert_frame_equal
 import numpy as np
+from matplotlib import pyplot as plt
 
 from marketing_attribution_models import MAM
 
@@ -217,3 +218,13 @@ def test_markov_journeys_weights(model_fixture):
         ),
         check_names=False,
     )
+
+
+def test_models_plot(model_fixture):
+    model: MAM = model_fixture()
+    model.attribution_all_models(exclude_models=["attribution_shapley"])
+    f, ax = plt.subplots(1, 1, figsize=(15, 10))
+    _df = model.plot_attributions()
+    f.savefig("test_plots/test_models_plot.png")
+
+    assert True

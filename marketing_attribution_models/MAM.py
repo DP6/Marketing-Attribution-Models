@@ -8,7 +8,6 @@ import numpy.typing as npt
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.axes._subplots import AxesSubplot
 import seaborn as sns
 
 plt.style.use("fivethirtyeight")
@@ -449,37 +448,41 @@ class MAM:
 
         if heuristic:
             # Running attribution_last_click
-            if "attribution_last_click" not in exclude_models:
+            if (
+                exclude_models
+                and "attribution_last_click" not in exclude_models
+                and exclude_models
+            ):
                 self.attribution_last_click(
                     group_by_channels_models=group_by_channels_models
                 )
 
             # Running attribution_last_click_non
-            if "attribution_last_click_non" not in exclude_models:
+            if exclude_models and "attribution_last_click_non" not in exclude_models:
                 self.attribution_last_click_non(
                     but_not_this_channel=last_click_non_but_not_this_channel
                 )
 
             # Running attribution_first_click
-            if "attribution_first_click" not in exclude_models:
+            if exclude_models and "attribution_first_click" not in exclude_models:
                 self.attribution_first_click(
                     group_by_channels_models=group_by_channels_models
                 )
 
             # Running attribution_linear
-            if "attribution_linear" not in exclude_models:
+            if exclude_models and "attribution_linear" not in exclude_models:
                 self.attribution_linear(
                     group_by_channels_models=group_by_channels_models
                 )
 
             # Running attribution_position_based
-            if "attribution_position_based" not in exclude_models:
+            if exclude_models and "attribution_position_based" not in exclude_models:
                 self.attribution_position_based(
                     group_by_channels_models=group_by_channels_models
                 )
 
             # Running attribution_time_decay
-            if "attribution_time_decay" not in exclude_models:
+            if exclude_models and "attribution_time_decay" not in exclude_models:
                 self.attribution_time_decay(
                     decay_over_time=time_decay_decay_over_time,
                     frequency=time_decay_frequency,
@@ -489,7 +492,7 @@ class MAM:
         if algorithmic:
 
             # Running attribution_shapley
-            if "attribution_shapley" not in exclude_models:
+            if exclude_models and "attribution_shapley" not in exclude_models:
                 self.attribution_shapley(
                     size=shapley_size,
                     order=shapley_order,
@@ -498,7 +501,7 @@ class MAM:
                 )
 
             # Running attribution markov
-            if "attribution_markov" not in exclude_models:
+            if exclude_models and "attribution_markov" not in exclude_models:
                 self.attribution_markov(
                     transition_to_same_state=markov_transition_to_same_state
                 )
@@ -1671,7 +1674,7 @@ class MAM:
         sort_by_col: str = None,
         number_of_channels: int = 10,
         avoid_models: List = None,
-        ax: AxesSubplot = None,
+        ax: plt.Axes = None,
         **kwargs,
     ):
         """
@@ -1699,11 +1702,14 @@ class MAM:
         # Plot Parameters
         sns.barplot(data=df_plot, hue="variable", x="value", y="channels", **kwargs)
         if not ax:
-            f, ax = plt.subplots(1,1,figsize=(15,10))
+            f, ax = plt.subplots(1, 1, figsize=(15, 10))
         ax.grid(color="gray", linestyle=":", linewidth=1, axis="both")
-        ax.set_title(
-            f"Attribution Models\n(top {number_of_channels}, sorted desc by {re.sub('attribution_', '', sort_by_col)})"
+        sort_string = (
+            f"sorted desc by {re.sub('attribution_', '', sort_by_col)})"
+            if sort_by_col
+            else ""
         )
+        ax.set_title(f"Attribution Models\n(top {number_of_channels}{sort_string}")
         ax.set_frame_on(False)
         ax.set_xticks(np.arange(0.0, 1.0, 0.05))
         plt.tight_layout()
