@@ -1371,7 +1371,10 @@ class MAM:
         chmap = {a: b[0] for a, b in zip(frame.index.values, frame.values)}
         _df = pd.concat([self.channels, self.conversion_value], axis=1)
         channels_value = _df.apply(
-            lambda row: [chmap[x] * row[self.journey_with_conv_colname] for x in row.source_medium],
+            lambda row: [
+                chmap[x] * row[self.journey_with_conv_colname]
+                for x in row.source_medium
+            ],
             axis=1,
         )
         channels_value = channels_value.apply(lambda x: list(np.array(x) / sum(x)))
