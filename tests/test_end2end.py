@@ -221,10 +221,14 @@ def test_markov_journeys_weights(model_fixture):
 
 
 def test_models_plot(model_fixture):
+    plt.style.use("fivethirtyeight")
     model: MAM = model_fixture()
     model.attribution_all_models(exclude_models=["attribution_shapley"])
     f, ax = plt.subplots(1, 1, figsize=(15, 10))
-    _df = model.plot_attributions()
+    _df = model.plot_attributions(
+        kind_of_conversion="Purchase",
+        sort_by_col="attribution_last_click_non_Direct_heuristic", ax=ax
+    )
     f.savefig("test_plots/test_models_plot.png")
 
     assert True

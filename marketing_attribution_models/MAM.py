@@ -1708,11 +1708,15 @@ class MAM:
         sort_string = (
             f"sorted desc by {re.sub('attribution_', '', sort_by_col)})"
             if sort_by_col
+            else ")"
+        )
+        kind_of_conversion_string = (
+            "for " + kind_of_conversion.lower().capitalize()
+            if kind_of_conversion
             else ""
         )
-        kind_of_conversion = kind_of_conversion.lower().captalize()
         ax.set_title(
-            f"Attribution Models for {kind_of_conversion}\n(top {number_of_channels}{sort_string}"
+            f"Attribution Models {kind_of_conversion_string}\n(top {number_of_channels}{sort_string}"
         )
         ax.set_frame_on(False)
         ax.set_xticks(np.arange(0.0, 1.0, 0.05))
