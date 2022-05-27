@@ -1674,6 +1674,7 @@ class MAM:
         sort_by_col: str = None,
         number_of_channels: int = 10,
         avoid_models: List = None,
+        kind_of_conversion: str = None,
         ax: plt.Axes = None,
         **kwargs,
     ):
@@ -1709,7 +1710,10 @@ class MAM:
             if sort_by_col
             else ""
         )
-        ax.set_title(f"Attribution Models\n(top {number_of_channels}{sort_string}")
+        kind_of_conversion = kind_of_conversion.lower().captalize()
+        ax.set_title(
+            f"Attribution Models for {kind_of_conversion}\n(top {number_of_channels}{sort_string}"
+        )
         ax.set_frame_on(False)
         ax.set_xticks(np.arange(0.0, 1.0, 0.05))
         plt.tight_layout()
