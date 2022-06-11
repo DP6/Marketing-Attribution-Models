@@ -1,41 +1,29 @@
 from typing import List, Dict, Any, Callable
 import pytest
 
-import pandas as pd
 from marketing_attribution_models import MAM
-
-
-_df = None
-
-
-def get_intermediate(df):
-    global _df
-    _df = df
-    return df
-
-
-df = (
-    pd.read_csv("data/test_dataset.csv")
-    .pipe(get_intermediate)
-    .assign(event_time=pd.to_datetime(_df.event_time))
-    .assign(is_conversion=_df.is_conversion.astype("bool"))
-    .assign(session_id=_df.session_id.astype("str"))
-)
+from utils import load_sample_dataframe, generate_sample_dataframe
 
 
 @pytest.fixture
-def model_fixture() -> MAM:
+def model_fixture() -> Callable:
     """Fixture to create a model."""
 
-    def factory(attribution_window=30) -> MAM:
+    def factory(attribution_window=30, should_sample=False, **kargs) -> MAM:
+        df = load_sample_dataframe()
+        if should_sample:
+            n = len(df.user_pseudo_id.unique())
+            sample_df = generate_sample_dataframe(**kargs)
+        else:
+            sample_df = df
         return MAM(
-            df,
+            sample_df,
             attribution_window=attribution_window,
             channels_colname="source_medium",
             group_channels=True,
             group_channels_by_id_list=["user_pseudo_id"],
             group_timestamp_colname="event_time",
-            journey_with_conv_colname="is_conversion",
+            journey_with_conv_colname="is_conversion_purchase",
             create_journey_id_based_on_conversion=True,
         )
 
