@@ -1,4 +1,4 @@
-user_pseudo_id,session_id,event_time,user_id,is_conversion,source_medium
+user_pseudo_id,session_id,event_time,user_id,is_conversion_purchase,source_medium
 A,1,2021-07-20 15:00:00,,0,seo
 A,2,2022-01-20 15:00:00,,0,direct
 A,3,2022-01-20 16:00:00,,0,google_ads
