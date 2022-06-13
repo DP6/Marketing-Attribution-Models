@@ -1,8 +1,12 @@
 from typing import List, Dict, Any, Callable
 import pytest
 
+pytest_plugins = ("tests.utils",)
+
+import pandas as pd
+
 from marketing_attribution_models import MAM
-from utils import load_sample_dataframe, generate_sample_dataframe
+from tests.utils import load_sample_dataframe, generate_sample_dataframe
 
 
 @pytest.fixture
@@ -28,3 +32,20 @@ def model_fixture() -> Callable:
         )
 
     return factory
+
+
+# @pytest.fixture
+# def load_sample_dataframe_fixture() -> Callable:
+#     """Fixture to load a sample dataframe."""
+
+#     def factory(**kargs) -> pd.DataFrame:
+#         return load_sample_dataframe(**kargs)
+
+#     return factory
+
+# @pytest.fixture
+# def generate_sample_dataframe_fixture() -> Callable:
+#     """Fixture to generate a random sample dataframe."""
+
+#     def factory(**kargs) -> pd.DataFrame:
+#         return generate_sample_dataframe(**kargs)

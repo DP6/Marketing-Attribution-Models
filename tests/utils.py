@@ -32,7 +32,6 @@ def random_date(start, end) -> datetime.datetime:
 
 def load_sample_dataframe() -> pd.DataFrame:
     return (
-        # pd.read_csv("data/test_dataset.csv")
         pd.read_csv("data/test_dataset.csv")
         .pipe(get_intermediate)
         .assign(event_time=pd.to_datetime(_df.event_time))
