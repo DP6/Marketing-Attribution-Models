@@ -9,6 +9,15 @@ from matplotlib import pyplot as plt
 from marketing_attribution_models import MAM
 
 
+def test_big_dataframe_formation(model_fixture):
+    """
+    Testa um dataset grande.
+    """
+    # user A has one session too old, which will be excluded
+    model = model_fixture(should_sample=True)
+    assert True
+
+
 def test_dataframe_formation_converted(model_fixture):
     """
     Checa algumas entradas no dataframe formado pelo modelo.
@@ -227,8 +236,9 @@ def test_models_plot(model_fixture):
     f, ax = plt.subplots(1, 1, figsize=(15, 10))
     _df = model.plot_attributions(
         kind_of_conversion="Purchase",
-        sort_by_col="attribution_last_click_non_Direct_heuristic", ax=ax
+        sort_by_col="attribution_last_click_non_Direct_heuristic",
+        ax=ax,
     )
-    f.savefig("test_plots/test_models_plot.png")
+    f.savefig("tests/test_plots/test_models_plot.png")
 
     assert True
