@@ -239,6 +239,6 @@ def test_models_plot(model_fixture):
         sort_by_col="attribution_last_click_non_Direct_heuristic",
         ax=ax,
     )
-    f.savefig("test_plots/test_models_plot.png")
+    f.savefig("tests/test_plots/test_models_plot.png")
 
     assert True
