@@ -14,7 +14,7 @@ def test_big_dataframe_formation(model_fixture):
     Testa um dataset grande.
     """
     # user A has one session too old, which will be excluded
-    model = model_fixture(frac=0.1)
+    model = model_fixture(should_sample=True)
     assert True
 
 
@@ -23,7 +23,7 @@ def test_dataframe_formation_converted(model_fixture):
     Checa algumas entradas no dataframe formado pelo modelo.
     """
     # user A has one session too old, which will be excluded
-    model = model_fixture(frac=0.3)
+    model = model_fixture()
     df_example: pd.DataFrame = model.as_pd_dataframe().query("journey_id == 'id:A_J:0'")
     assert df_example.channels_agg.equals(
         pd.Series({0: "direct > google_ads > direct"})

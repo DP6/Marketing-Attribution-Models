@@ -35,26 +35,27 @@ def load_sample_dataframe() -> pd.DataFrame:
         pd.read_csv("data/test_dataset.csv")
         .pipe(get_intermediate)
         .assign(event_time=pd.to_datetime(_df.event_time))
-        .assign(is_conversion=_df.is_conversion_purchase.astype("bool"))
+        .assign(is_conversion_purchase=_df.is_conversion_purchase.astype("bool"))
         .assign(session_id=_df.session_id.astype("str"))
     )
 
 
 def generate_sample_dataframe(
-    n_users: int = 1000000,
+    n_users: int = 10000,
     avg_journey_length: int = 5,
     prob_conversion: float = 0.10,
+    conversion_col_name: str = "is_conversion_purchase",
 ) -> pd.DataFrame:
     """
     Generates a sample dataframe with a given number of users and a given average journey length.
     """
-    users = np.random.randint(1, n_users)
+    users = np.linspace(1, n_users, n_users).astype("int")
     data = {
         "user_pseudo_id": [],
         "session_id": [],
         "event_time": [],
         "user_id": [],
-        "is_conversion": [],
+        conversion_col_name: [],
         "source_medium": [],
     }
     for user in users:
@@ -72,8 +73,8 @@ def generate_sample_dataframe(
                 data["event_time"].append(
                     data["event_time"][-1] + timedelta(days=np.random.randint(1, 7))
                 )
-            data["user_id"].append(np.random.randint(1, user))
-            data["is_conversion"].append(
+            data["user_id"].append(np.random.randint(1, n_users * 2))
+            data[conversion_col_name].append(
                 False
                 if i + 1 < journey_length
                 else np.random.choice(
