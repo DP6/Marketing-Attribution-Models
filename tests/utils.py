@@ -30,9 +30,13 @@ def random_date(start, end) -> datetime.datetime:
     return start + timedelta(seconds=random_second)
 
 
-def load_sample_dataframe() -> pd.DataFrame:
+def load_sample_dataframe(multiple_conversions=False) -> pd.DataFrame:
+    if multiple_conversions:
+        path = "data/test_dataset_with_transaction_counts.csv"
+    else:
+        path = "data/test_dataset.csv"
     return (
-        pd.read_csv("data/test_dataset.csv")
+        pd.read_csv(path)
         .pipe(get_intermediate)
         .assign(event_time=pd.to_datetime(_df.event_time))
         .assign(is_conversion_purchase=_df.is_conversion_purchase.astype("bool"))
