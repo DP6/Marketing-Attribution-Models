@@ -102,7 +102,7 @@ def test_markov_transition_matrix_multiple_conversions(
 ):
     model = model_fixture_multiple_conversions()
     result: Tuple[Any] = model.attribution_markov(
-        transition_to_same_state=True, conversion_value_type="numeric"
+        transition_to_same_state=True, conversion_value_type="integer"
     )
     assert_frame_equal(
         result[2],
@@ -182,7 +182,7 @@ def test_markov_removal_effect_matrix_multiple_conversion(
 ):
     model = model_fixture_multiple_conversions()
     result: Tuple[Any] = model.attribution_markov(
-        transition_to_same_state=True, conversion_value_type="numeric"
+        transition_to_same_state=True, conversion_value_type="integer"
     )
     assert_frame_equal(
         result[3],

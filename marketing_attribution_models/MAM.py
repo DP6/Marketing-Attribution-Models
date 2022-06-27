@@ -1252,7 +1252,7 @@ class MAM:
         model_type = "_algorithmic"
         model_name = model_name + model_type
 
-        allowed_conversion_value_types = ["binary", "numeric", "frequency", "monerary"]
+        allowed_conversion_value_types = ["binary", "integer", "frequency", "monetary"]
         if conversion_value_type not in allowed_conversion_value_types:
             raise ValueError(
                 "conversion_value_type must be one of the following: "
@@ -1334,7 +1334,7 @@ class MAM:
         # copying conversion_quantity to each new row
         if (
             np.issubdtype(self.conversion_value.dtype, float)
-            and conversion_value_type == "numeric"
+            and conversion_value_type == "integer"
         ):
             # we do not hava a frequency column yet so we are using
             # self.conversion_value.apply(lambda x: 1) to count each line
@@ -1344,7 +1344,7 @@ class MAM:
                 freq_values = self.conversion_value.apply(lambda x: 1)
             elif conversion_value_type == "frequency":
                 freq_values = self.conversion_value
-            elif conversion_value_type in ["monerary", "numeric"]:
+            elif conversion_value_type in ["monetary", "integer"]:
                 # in this case, we count 1 for non-conversions
                 # and some n>0 for multiple conversions in the same journey
                 freq_values = self.conversion_value.apply(lambda x: max(x, 1))
