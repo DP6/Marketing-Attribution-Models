@@ -95,6 +95,8 @@ class MAM:
         self.group_by_channels_models = None
         self.round_values_to = round_values_to
         self.journey_with_conv_colname = journey_with_conv_colname
+        self.channels_colname = channels_colname
+        self.conversion_value_colname = conversion_value
 
         ##########################################################
         ################## Instance attributes ###################
@@ -1244,11 +1246,18 @@ class MAM:
         self,
         transition_to_same_state=False,
         group_by_channels_models=True,
-        conversion_value_as_frequency=False,
+        conversion_value_type="binary",
     ):
         model_name = "attribution_markov"
         model_type = "_algorithmic"
         model_name = model_name + model_type
+
+        allowed_conversion_value_types = ["binary", "numeric", "frequency", "monerary"]
+        if conversion_value_type not in allowed_conversion_value_types:
+            raise ValueError(
+                "conversion_value_type must be one of the following: "
+                + ", ".join(allowed_conversion_value_types)
+            )
 
         def power_to_infinity(matrix):
             """Raises a square matrix to an infinite power using eigendecomposition.
@@ -1323,16 +1332,22 @@ class MAM:
         temp.apply(save_orig_dest)
 
         # copying conversion_quantity to each new row
-        if np.issubdtype(self.conversion_value.dtype, float):
+        if (
+            np.issubdtype(self.conversion_value.dtype, float)
+            and conversion_value_type == "numeric"
+        ):
             # we do not hava a frequency column yet so we are using
             # self.conversion_value.apply(lambda x: 1) to count each line
             conversion_quantity = self.conversion_value.apply(lambda x: 1)
-
         else:
-            if conversion_value_as_frequency:
-                freq_values = self.conversion_value
-            else:
+            if conversion_value_type == "binary":
                 freq_values = self.conversion_value.apply(lambda x: 1)
+            elif conversion_value_type == "frequency":
+                freq_values = self.conversion_value
+            elif conversion_value_type in ["monerary", "numeric"]:
+                # in this case, we count 1 for non-conversions
+                # and some n>0 for multiple conversions in the same journey
+                freq_values = self.conversion_value.apply(lambda x: max(x, 1))
 
             conversion_quantity = []
 
@@ -1347,14 +1362,12 @@ class MAM:
             temp = temp[temp.orig != temp.dest]
 
         # Converting channels_names to index and pass a numpy array foward
-        channels_names = (
-            ["(inicio)"]
-            + list(
-                (set(temp.orig) - set(["(inicio)"]))
-                | (set(temp.dest) - set(["(conversion)", "(null)"]))
-            )
-            + ["(null)", "(conversion)"]
+        channels_names = list(
+            (set(temp.orig) - set(["(inicio)"]))
+            | (set(temp.dest) - set(["(conversion)", "(null)"]))
         )
+        channels_names.sort()
+        channels_names = ["(inicio)"] + channels_names + ["(null)", "(conversion)"]
         temp["orig"] = temp.orig.apply(channels_names.index)
         temp["dest"] = temp.dest.apply(channels_names.index)
         matrix = path_to_matrix(temp[["orig", "dest", "count"]].values)
@@ -1376,8 +1389,8 @@ class MAM:
         _df = pd.concat([self.channels, self.conversion_value], axis=1)
         channels_value = _df.apply(
             lambda row: [
-                chmap[x] * row[self.journey_with_conv_colname]
-                for x in row.source_medium
+                chmap[x] * row[self.conversion_value_colname]
+                for x in row[self.channels_colname]
             ],
             axis=1,
         )

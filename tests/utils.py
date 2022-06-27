@@ -32,7 +32,7 @@ def random_date(start, end) -> datetime.datetime:
 
 def load_sample_dataframe(multiple_conversions=False) -> pd.DataFrame:
     if multiple_conversions:
-        path = "data/test_dataset_with_transaction_counts.csv"
+        path = "data/test_dataset_multiple_conversions.csv"
     else:
         path = "data/test_dataset.csv"
     return (
