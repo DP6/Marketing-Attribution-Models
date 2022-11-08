@@ -281,7 +281,7 @@ class MAM:
             # merge time till conv into original df
             self.original_df = (
                 self.original_df.merge(
-                    df_temp[[session_id_col, "time_till_conv"]],
+                    df_temp[[session_id_col, "time_till_conv", "conversion_time", session_id_col + "_conv"]],
                     on=session_id_col,
                     how="inner",
                 )
