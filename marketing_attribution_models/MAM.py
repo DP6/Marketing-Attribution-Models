@@ -1238,6 +1238,7 @@ class MAM:
         transition_to_same_state=False,
         group_by_channels_models=True,
         conversion_value_as_frequency=True,
+        channel_weights: dict = None
     ):
         """Attribution using Markov."""
         model_name = "attribution_markov"
@@ -1287,6 +1288,7 @@ class MAM:
             matrix[-2, -2] = 1
             return matrix
 
+        #Adds the string (inicio) and (conversion)/(null) into all journeys
         temp = self.channels.apply(
             lambda x: ["(inicio)"] + x
         ) + self.journey_with_conv.apply(lambda x: ["(conversion)" if x else "(null)"])
@@ -1295,6 +1297,7 @@ class MAM:
         dest = []
         journey_length = []
 
+        #Create arrays with origin and destination of all touchpoints for every journey.
         def save_orig_dest(arr):
             orig.extend(arr[:-1])
             dest.extend(arr[1:])
@@ -1338,7 +1341,17 @@ class MAM:
         temp["orig"] = temp.orig.apply(channels_names.index)
         temp["dest"] = temp.dest.apply(channels_names.index)
         matrix = path_to_matrix(temp[["orig", "dest", "count"]].values)
+
+        #Calculate non-normalized removal effect percentage
         removal_effect_result = removal_effect(matrix)[1:-2]
+
+        #Apply channel weight into non-normalized removal effect percentage
+        if channel_weights:
+            for channel, weight in channel_weights.items():
+                #Filter [1:-2] to exclude (inicio), (null) and (conversion), as it was done to create the removal_effect_result
+                channel_index = channels_names[1:-2].index(channel)
+                removal_effect_result[channel_index] *= weight
+
         results = removal_effect_result / removal_effect_result.sum(axis=0)
 
         # Channels weights
