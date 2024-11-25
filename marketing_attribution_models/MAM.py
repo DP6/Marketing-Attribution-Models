@@ -9,7 +9,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-plt.style.use("seaborn-white")
+if "seaborn-white" in plt.style.available:
+    plt.style.use("seaborn-white")
+else:
+    plt.style.use("default")
 
 
 class MAM:
