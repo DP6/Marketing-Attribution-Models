@@ -9,8 +9,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-plt.style.use("seaborn-white")
-
+if "seaborn-white" in plt.style.available:
+    plt.style.use("seaborn-white")
+else:
+    plt.style.use("default")
 
 class MAM:
     """MAM (Marketing Attribution Models) is a class inspired on the R Package.
@@ -267,7 +269,7 @@ class MAM:
             df_temp["time_till_conv"] = (
                 df_temp[group_timestamp_colname + "_y"]
                 - df_temp[group_timestamp_colname + "_x"]
-            ).astype("timedelta64[h]")
+            ).astype("timedelta64[ns]")
 
             df_temp = (
                 df_temp.groupby(group_channels_by_id_list)["time_till_conv"]
