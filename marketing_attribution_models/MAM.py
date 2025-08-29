@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-plt.style.use("seaborn-white")
+plt.style.use("whitegrid")
 
 
 class MAM:
