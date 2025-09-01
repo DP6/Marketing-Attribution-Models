@@ -527,7 +527,6 @@ class MAM:
         other_df=None,
         **kwargs
     ):
-
         """Barplot of the results that were generated and stored on the
         variable self.group_by_channels_models.
 
@@ -624,9 +623,11 @@ class MAM:
         while loop_count < order:
             frame["channels"] = frame.apply(
                 lambda x: [
-                    x.channels[i - 1]
-                    if ((canal == selected_channel) & (time < time_window))
-                    else canal
+                    (
+                        x.channels[i - 1]
+                        if ((canal == selected_channel) & (time < time_window))
+                        else canal
+                    )
                     for i, (canal, time) in enumerate(
                         zip(x.channels, x.time_till_conv_window)
                     )
@@ -894,15 +895,17 @@ class MAM:
         channels_value = self.channels.apply(
             lambda canais: np.asarray(
                 [
-                    1
-                    if i
-                    == max(
-                        [
-                            i if canal != but_not_this_channel else 0
-                            for i, canal in enumerate(canais)
-                        ]
+                    (
+                        1
+                        if i
+                        == max(
+                            [
+                                i if canal != but_not_this_channel else 0
+                                for i, canal in enumerate(canais)
+                            ]
+                        )
+                        else 0
                     )
-                    else 0
                     for i, canal in enumerate(canais)
                 ]
             )
@@ -1088,22 +1091,26 @@ class MAM:
 
         # Selecting last channel from the series
         channels_value = self.channels.apply(
-            lambda canais: np.asarray([1])
-            if len(canais) == 1
-            else np.asarray(
-                [
-                    list_positions_first_middle_last[0]
-                    + list_positions_first_middle_last[1] / 2,
-                    list_positions_first_middle_last[2]
-                    + list_positions_first_middle_last[1] / 2,
-                ]
-            )
-            if len(canais) == 2
-            else np.asarray(
-                [list_positions_first_middle_last[0]]
-                + [list_positions_first_middle_last[1] / (len(canais) - 2)]
-                * (len(canais) - 2)
-                + [list_positions_first_middle_last[2]]
+            lambda canais: (
+                np.asarray([1])
+                if len(canais) == 1
+                else (
+                    np.asarray(
+                        [
+                            list_positions_first_middle_last[0]
+                            + list_positions_first_middle_last[1] / 2,
+                            list_positions_first_middle_last[2]
+                            + list_positions_first_middle_last[1] / 2,
+                        ]
+                    )
+                    if len(canais) == 2
+                    else np.asarray(
+                        [list_positions_first_middle_last[0]]
+                        + [list_positions_first_middle_last[1] / (len(canais) - 2)]
+                        * (len(canais) - 2)
+                        + [list_positions_first_middle_last[2]]
+                    )
+                )
             )
         )
         # multiplying the results with the conversion value
@@ -1142,11 +1149,13 @@ class MAM:
         model_name = "attribution_position_decay_heuristic"
 
         channels_value = self.channels.apply(
-            lambda channels: np.asarray([1])
-            if len(channels) == 1
-            else (
-                np.asarray(list(range(1, len(channels) + 1)))
-                / np.sum(np.asarray(list(range(1, len(channels) + 1))))
+            lambda channels: (
+                np.asarray([1])
+                if len(channels) == 1
+                else (
+                    np.asarray(list(range(1, len(channels) + 1)))
+                    / np.sum(np.asarray(list(range(1, len(channels) + 1))))
+                )
             )
         )
         # multiplying the results with the conversion value
