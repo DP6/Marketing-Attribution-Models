@@ -162,10 +162,10 @@ In order to explore and understand the capabilities of MAM, a "Random DataFrame 
 attributions = MAM(random_df=True)
 ```
     
-After the Object MAM is created, we can check out our database now with the addition of our **journey_id** and with sessions grouped in **journeys** using the **attriute *".DataFrame"***.
+After the Object MAM is created, we can check out our database now with the addition of our **journey_id** and with sessions grouped in **journeys** using the **method *".as_pd_dataframe()"***.
 
 ```python
-attributions.DataFrame
+attributions.as_pd_dataframe()
 ```
 <table>
   <thead>
@@ -273,11 +273,11 @@ attributions.DataFrame
 
 This attribute is **updated** for **every attribution model** generated. Only in the case of heuristic models, a new column is appended containing the attribution value given by said model.
 
->**Note:** The attribute *.DataFrame* does not interfere with any model calculations. Should it be altered by usage, the following results aren't affected.
+>**Note:** The method *.as_pd_dataframe()* does not interfere with any model calculations. Should it be altered by usage, the following results aren't affected.
 
 ```python
 attributions.attribution_last_click()
-attributions.DataFrame
+attributions.as_pd_dataframe()
 ```
 
 <table>
@@ -436,7 +436,7 @@ attributions.group_by_channels_models
 </table>
 
 
-As with the *.DataFrame* attribute, *group_by_channels_models* is also updated for every model used **without the limitation** of not displaying algorithmic results.
+As with the *.as_pd_dataframe()* method, *group_by_channels_models* is also updated for every model used **without the limitation** of not displaying algorithmic results.
 
 ```python
 attributions.attribution_shapley()
@@ -507,13 +507,13 @@ attributions.group_by_channels_models
 
 ### About the Models
 
-All heuristic models behave the same when using the attributes *.DataFrame* and *.group_by_channels_models*, as explained before, and the **output** of all heuristic **model's methods** return a **tuple** containing two **pandas Series**.
+All heuristic models behave the same when using the method *.as_pd_dataframe()* and the attribute *.group_by_channels_models*, as explained before, and the **output** of all heuristic **model's methods** return a **tuple** containing two **pandas Series**.
 
 ```python
 attribution_first_click = attributions.attribution_first_click()
 ```
 
-The **first** Series of the tuple are the results in a **journey granularity**, similar to the observed in the *.DataFrame* attribute
+The **first** Series of the tuple are the results in a **journey granularity**, similar to the observed in the *.as_pd_dataframe()* method.
 
 
 ```python
@@ -796,7 +796,7 @@ attributions.attribution_time_decay(
 
 ##### Markov Chains
 
-Uppon being called, this model returns a tuple with **four** components. The first two (indexed 0 and 1) are just like with the heuristic models, with the representation of the *.DataFrame* and *.group_by_channels_models* respectively. As for the third and fourth components (indexed 2 and 3) the results are the **transition matrix** and the **removal effect table**.
+Uppon being called, this model returns a tuple with **four** components. The first two (indexed 0 and 1) are just like with the heuristic models, with the representation of the *.as_pd_dataframe()* and *.group_by_channels_models* respectively. As for the third and fourth components (indexed 2 and 3) the results are the **transition matrix** and the **removal effect table**.
 
 To start off, it is possible to indicate if same **state transitions** are considered or not (*e.g.* Direct to Direct).
 
