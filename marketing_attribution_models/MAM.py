@@ -11,6 +11,7 @@ import seaborn as sns
 
 plt.style.use("seaborn-v0_8-white")
 
+
 class MAM:
     """MAM (Marketing Attribution Models) is a class inspired on the R Package.
 
