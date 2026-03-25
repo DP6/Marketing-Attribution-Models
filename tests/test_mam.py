@@ -65,7 +65,7 @@ def test_as_pd_dataframe_len():
     ]:
         df_journey_test[col] = df_journey_test[col].str.split(" > ").apply(len)
         results.append(all((df_journey_test[col] == df_journey_test["size"]).values))
-    assert all(results) # nosec
+    assert all(results)  # nosec
 
 
 def test_agg_results():
@@ -80,7 +80,7 @@ def test_agg_results():
     model_results_df = model_results_df[
         [col for col in model_results_df.columns if col != "channels"]
     ]
-    assert all((model_results_df.sum().round() == res_value).values) # nosec
+    assert all((model_results_df.sum().round() == res_value).values)  # nosec
 
 
 def test_att_first():
@@ -90,7 +90,7 @@ def test_att_first():
     """
     colname = "attribution_first_click_heuristic"
     df_journey_test = DF_JOURNEY.copy()
-    assert all(                          # nosec
+    assert all(  # nosec
         df_journey_test[colname]
         .str.split(" > ")
         .apply(lambda x: float(x[0]) == CONV_VALUE)
@@ -105,7 +105,7 @@ def test_att_last():
     """
     colname = "attribution_last_click_heuristic"
     df_journey_test = DF_JOURNEY.copy()
-    assert all(                            # nosec
+    assert all(  # nosec
         df_journey_test[colname]
         .str.split(" > ")
         .apply(lambda x: float(x[-1]) == CONV_VALUE)
@@ -124,7 +124,7 @@ def test_att_last_non():
     df_journey_test = df_journey_test[
         df_journey_test["channels_agg"].apply(lambda x: x in non_list)
     ]
-    assert all(                     # nosec
+    assert all(  # nosec
         df_journey_test[colname]
         .str.split(" > ")
         .apply(lambda x: float(x[-1]) == 0)
@@ -139,7 +139,7 @@ def test_att_linear():
     """
     colname = "attribution_linear_heuristic"
     df_journey_test = DF_JOURNEY.copy()
-    assert all(                      # nosec
+    assert all(  # nosec
         df_journey_test[colname]
         .str.split(" > ")
         .apply(lambda x: float(x[0]) == (CONV_VALUE / len(x)))
@@ -157,7 +157,7 @@ def test_att_position_based():
     df_test = df_journey_test[
         df_journey_test["channels_agg"].apply(lambda x: len(x) == 3)
     ]
-    assert all(                     # nosec
+    assert all(  # nosec
         df_test[colname]
         .str.split(" > ")
         .apply(lambda x: float(x[0]) == (CONV_VALUE * 0.4))
@@ -166,7 +166,7 @@ def test_att_position_based():
     df_test = df_journey_test[
         df_journey_test["channels_agg"].apply(lambda x: len(x) == 2)
     ]
-    assert all(                     # nosec
+    assert all(  # nosec
         df_test[colname]
         .str.split(" > ")
         .apply(lambda x: float(x[0]) == (CONV_VALUE * 0.5))
