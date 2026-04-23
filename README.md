@@ -1142,3 +1142,77 @@ attributions.plot(model_type='algorithmic')
 ```
 
 ![png](readme-images/output_47_1.png)
+
+## 5. Extra: Using the parameter *conversion_value_as_frequency* for Large Datasets
+
+There are common scenarios where the volume of data is extremely large, and this can cause memory or processing issues when running the Markov model. To handle this, we created the `conversion_value_as_frequency` parameter.
+
+In practice, this allows you to use a grouped dataset based on the *journey path*, which can drastically reduce the size of the database while fully preserving the information.
+
+### Concept Example
+
+Suppose that originally our journey database looks like this:
+
+| journey | has_conversion |
+| :--- | :--- |
+| a > a > b | true |
+| a > a > b | true |
+| a > a > b | false |
+| b > a | true |
+| b > a | false |
+| b > a | false |
+| b > a | false |
+| c > b | false |
+| c > b | false |
+| c > b | false |
+| c > b | false |
+| c > b | false |
+| c > b | false |
+
+By applying a transformation to group and count the journeys:
+
+```sql
+SELECT
+  journey,
+  has_conversion,
+  COUNT(*) AS occurrences
+FROM original_database
+  GROUP BY journey, has_conversion
+```
+
+We obtain a new, much smaller table like this:
+
+| journey | has_conversion | occurrences |
+| :--- | :--- | :--- |
+| a > a > b | false | 1 |
+| a > a > b | true | 2 |
+| b > a | false | 3 |
+| b > a | true | 1 |
+| c > b | false | 6 |
+
+We went from 13 rows to just 5 rows. Now imagine this applied in a context with millions of rows where many journey types repeat.
+
+
+### Implementation
+
+To use this grouped data approach in the `MAM` object, you simply point the `conversion_value` parameter to your new frequency column (e.g., `'occurrences'`):
+
+```python
+# Instantiate a new MAM object passing 'occurrences' to 'conversion_value'
+mam_grouped = MAM(df=grouped_df,
+            group_channels=False,
+            conversion_value='occurrences',
+            channels_colname='journey',
+            journey_with_conv_colname='has_conversion',
+            time_till_conv_colname='skip_column')
+```
+
+And then, when calling the Markov method, make sure to set the `conversion_value_as_frequency` parameter to `True`:
+
+```python
+# Pass conversion_value_as_frequency = True to process the grouped data properly
+results_markov_grouped = mam_grouped.attribution_markov(transition_to_same_state=True,
+                                            conversion_value_as_frequency=True)
+```
+
+With this 'trick', we lower the risk of experiencing base size and memory-related issues when running Markov and the result will be the same as if we had used the normal method. 
