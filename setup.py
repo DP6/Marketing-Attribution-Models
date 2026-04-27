@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as f:
         "https://raw.githubusercontent.com/DP6/Marketing-Attribution-Models/master/readme-images/",
     )
 
-__version__ = "1.0.9" 
+__version__ = "1.0.9"
 setup(
     name="marketing_attribution_models",
     version=__version__,
