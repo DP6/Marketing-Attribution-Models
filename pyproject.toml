@@ -1,7 +1,32 @@
-[tool.semantic_release]
-branch = 'master'
-version_variable = [
-  'setup.py:__version__'
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nova-mam"
+version = "0.1.0"
+description = "Nova MAM (Marketing Attribution Models) refatorada com Polars e Jatoolbox"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
 ]
-version_source = 'tag'
-build_command = ""
+dependencies = [
+    "polars>=0.20.0",
+    "pandas>=2.0.0",
+    "scipy>=1.10.0",
+    "numpy>=1.24.0",
+    "jinja2>=3.1.0",
+    "plotly>=5.15.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["mam*"]
+

@@ -1,1218 +1,263 @@
-# Marketing Attribution Models
+# Nova MAM (Marketing Attribution Models)
 
-<div align="center">
-<img src="https://raw.githubusercontent.com/DP6/templates-centro-de-inovacoes/main/public/images/centro_de_inovacao_dp6.png" height="100px" />
-</div>
+A **Nova MAM** é uma biblioteca de alta performance para Modelagem de Atribuição de Marketing (Marketing Attribution Models) e análise de jornadas de conversão de clientes. Ela foi completamente migrada e otimizada utilizando **Polars**, resultando em processamentos ordens de grandeza mais rápidos e uso extremamente eficiente de memória RAM, mantendo estrita paridade matemática com as regras de negócio legadas.
 
-<p align="center">
-  <a href="#badge">
-    <img alt="semantic-release" src="https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg">
-  </a>
-  <a href="https://www.codacy.com/gh/DP6/Marketing-Attribution-Models/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=DP6/Marketing-Attribution-Models&amp;utm_campaign=Badge_Grade">
-    <img src="https://app.codacy.com/project/badge/Grade/0d6e5f753b2b4289aa27cc572b474773"/>
-  </a>
-</p>
-  
-## 1. About the Class  
-Python Class created to address problems regarding Digital Marketing Attribution.  
-  
-## 2. About Multi-Channel Attribution  
-While browsing online, an user has multiple touchpoints before converting, which could lead to ever so longer and more complex journeys.  
-  
-*How to duly credit conversions and optmize investment on media?*  
-  
-To adress this, we apply **Attribution Models**.  
-  
-### 2.1 Attribution Models  
-**Heuristic Models**:  
-  
-- **Last Interaction**:  
-- Default attribution in Gogle Analytics and other media platforms such as Google Ads and Facebook Business manager;  
-- Only the last touchpoint is credited for the conversion.  
-  
-- **Last Click Non-Direct**:  
-- All direct traffic is ignored and so 100% of the result goes to the last channel through which the client got to the website before converting.  
-  
-- **First Interaction**:  
-- The result is wholly attributed to the first touchpoint.  
-  
-- **Linear**:  
-- Every touchpoint is equally credited.  
-  
-- **Time Decay**:  
-- The more recent a touchpoint is, the more credit it gets.  
-- **Position Based**:  
-- In this model, 40% of the result is attributed to the last touchpoint, another 40% to the first and the remaining 20% is equally distributed among the midway channels.  
-  
-**Algotithmic Models**  
-  
-**Shapley Value**  
-  
-Used in Game Theory, this value is an estimation of the contribution of each individual player in a cooperative game.  
-  
-Conversions are credited to the channels by a process of permutating the journeys. In each permutation a channel is given out to estimate how essencial it is overall.  
-  
-**As an example**, let's look at the following hypotherical journey:  
-  
-Organic Search > Facebook > Direct > **$19** (as revenue)  
-  
-To obtain each channel's Shapley Value, we first need to consider all conversion values for the component permutations of this given journey.  
-  
-  
-> Organic Search > **$7**  
-  
-> Facebook > **$6**  
-  
-> Direct > **$4**  
-  
-> Organic Search > Facebook > **$15**  
-  
-> Organic Search > Direct > **$7**  
-  
-> Facebook > Direct > **$9**  
-  
-> Organic Search > Facebook > Direct > **$19**  
-  
-The number of component joneys increases exponentially the more distinct channels you have: The rate is 2^n (2 to the power of n) for **n channels**.  
-  
-In other words, with 3 distinct touchpoints there are 8 permutations. **With over 15, for instance, this process is unfeasible**.  
-  
-By default, the order of the touchpoints isn't taken into consideration when calculating the Shapley Value, only their presence or lack there of. In order to do so, the number of permutations **increases**.  
-  
-With that in mind, note that it is pretty difficult to use this model when considering the order of interactions. For n channels, not only there are 2^n permutations of a given channel **i**, but also **every permutation containing i in a different position**.  
-  
-**Some issues and limitations of Shapley Value**  
-  
-- The number of distinct channels is limited by the exponential nature of the permutations.  
-- When not considering the order of the touchpoints, the contribution estimated for channel A is considered the same being it preceded by B or C.  
-- If the order is taken into account, the number of combinations skyrockets and if any combination does not exist among the observations the model considers that journey as existent with zero conversions.  
-- Touchpoints that are unfrequent or are only present in longer journeys have their contribution underestimated.  
-  
-  
-**Markov Chains**
-A Markov Chain is a particular Stochastic process in which the probability distribution of any next state depends only on what the current state is, disregarding any preceeding states and their sequence.
+---
 
-In multichannel attriution, we can use the Markov Chains to calculate the probability of interaction between pairs of media channels with the **Transition Matrix**.
+## 🚀 Principais Destaques
 
-In regard to each channel's contribution in conversions, the **Removal Effect** comes in: For each jorney a given channel is removed and a conversion probability is calculated.
+- **Performance Extrema com Polars:** Algoritmos 100% vetorizados e em nível de expressão, eliminando loops lentos e permitindo o processamento de bases com milhões de registros em poucos segundos.
+- **Suporte Multiformato Nativo:** Suporta a ingestão transparente de três formatos de dados padrão de mercado (Sessões individuais, Jornadas lineares e Jornadas agrupadas com frequência).
+- **JAToolbox Integrada:** Versão modernizada da DP6 Journey Analysis Toolbox para exploração estatística profunda de canais e transições de caminhos.
+- **Modelos de Atribuição Avançados:** Heurísticas clássicas (Last Click, First Click, Linear, Position Based, Time Decay contínuo) e modelos algorítmicos robustos (Markov e Shapley).
+- **Visualização Pronta para Negócios:** Geração automatizada de One Page Reports interativos em HTML e exportação estruturada em JSON para integração rápida com ferramentas de Business Intelligence (BI).
 
-The value attributed to a channel, then, is obtained by the ratio of the difference between the probability of conversion in general and the probability once said channel is removed over the general probability again. 
+---
 
-In other words, the bigger a channel's removal effect, the larger their contribution is. 
+## 🛠️ Requisitos e Instalação
 
-**When working with Markovian Processes there are no restrictions due to the quantity or order of channels. Their sequence, itself, is a fundamental part of the algorithm.
+A biblioteca requer Python 3.12+ e as dependências listadas no `pyproject.toml`.
 
-### 2.2 References
-- [Attribution Models in Marketing](https://data-science-blog.com/blog/2019/04/18/attribution-models-in-marketing/)
-- [Attribution Theory: The Two Best Models for Algorithmic Marketing Attribution – Implemented in Apache Spark and R](http://datafeedtoolbox.com/attribution-theory-the-two-best-models-for-algorithmic-marketing-attribution-implemented-in-apache-spark-and-r/)
-- [Game Theory Attribution: The Model You’ve Probably Never Heard Of](https://clearcode.cc/blog/game-theory-attribution/)
-- [Marketing Channel Attribution With Markov Models In R](https://www.bounteous.com/insights/2016/06/30/marketing-channel-attribution-markov-models-r/?ns=l)
-- [Multi-Channel Funnels Data-Driven Attribution](https://support.google.com/analytics/topic/3180362?hl=en&ref_topic=3205717)
-- [Marketing Multi-Channel Attribution model with R (part 1: Markov chains concept)](https://analyzecore.com/2016/08/03/attribution-model-r-part-1/)
-- [Marketing Multi-Channel Attribution model with R (part 2: practical issues)](https://analyzecore.com/2017/05/31/marketing-multi-channel-attribution-model-r-part-2-practical-issues/)
-- [ml-book/shapley](https://christophm.github.io/interpretable-ml-book/shapley.html)
-- [Overview of Attribution modeling in MCF](https://support.google.com/analytics/answer/1662518?hl=en)
+Para instalar em modo de desenvolvimento em seu ambiente virtual:
 
-## 3. Importing the Class
-```python
->> pip install marketing_attribution_models
-```
-```python
-from marketing_attribution_models import MAM
+```bash
+# Certifique-se de ativar o seu ambiente virtual
+source .venv/bin/activate
+
+# Instale o pacote e suas dependências
+pip install -e .[dev]
 ```
 
-## 4. Demonstration
-### Creation of the MAM Object
-When **creating a MAM Object** two Data Frame **templates** can be used as input depending on what is the value of the parameter *group_channels*. 
+---
 
-- ***group_channels* = True**: The input Data Frame has **one session** of each user's jorney **per row**.
-  - The values required in each row (in other words, the required columns) are some **distinct** user identification, a **boolean** indication of convertion or lack there of and the session's **source channel**.
-- ***group_channels* = False**: The input Data Frame has **the whole journey** of each user **per row**. In case you use Google Analytics, this template can be obtained by downloading the *Top Conversion Paths* report.    
-  - In this case, both the channels and time to conversion columns are agregated by journey with each touchpoint being separated by '**>**' (the bigger than sign) by default. A different separator can be set in the *path_separator* parameter.
+## 📁 Estrutura de Arquivos
 
-For this demostration we'll be using a Data Frame in which the journeys are **not yet grouped**, with each row as a different session and without an unique journey id.
+```
+nova_mam/
+├── mam/
+│   ├── __init__.py
+│   ├── core.py             # Orquestrador unificado da API (Classe principal MAM)
+│   ├── preprocessing.py    # Pipeline de ingestão polars para os 3 formatos
+│   ├── analysis.py         # Journey Analysis Toolbox (JAToolbox)
+│   ├── reporting.py        # Gerador de relatórios HTML (Jinja2/Plotly) e JSON BI
+│   ├── results.py          # Wrapper unificado de retorno dos resultados
+│   └── models/
+│       ├── __init__.py
+│       ├── base.py         # Classe base para modelos
+│       ├── heuristics.py   # Modelos: Last Click, First Click, Linear, Position Based, Time Decay
+│       ├── markov.py       # Modelo Algorítmico baseado em Cadeias de Markov estável
+│       └── shapley.py      # Modelo Algorítmico baseado em Teoria dos Jogos Cooperativos (Shapley)
+```
 
-> **Note:** The MAM Class has a built in parameter for journey id creation, *create_journey_id_based_on_conversion*, that if **True**, an id is created based on the user id, input in the *group_channels_id_list* parameter, and the column indicating wether there is a conversion or not, whose name is defined by the *journey_with_conv_colname* parameter.
+---
 
-In this scenario, all sessions from each distinct user will be ordered and for every conversion a new journey id is created. However, we **highly encourage** that this journey id creation is customized based on **knowledge specific to the business in hand** and exploratory conclusions. For instance if in a given business it is noted that the average journey duration is about a week, a new critereon may be defined so that once any user doesn't have any interaction for seven days the journey breaks under the assumption there was a loss of interest. 
+## 📥 Guia de Ingestão de Dados (Os 3 Formatos)
 
-As for the parameters now, here's how they're configured for our *group_ channels* = True scenario:
+O orquestrador principal `mam.core.MAM` detecta automaticamente ou configura a ingestão dos dados com base no parâmetro `format_type`.
 
-1. A **Pandas DataFrame** is input as a database;
-2. The *group_channels* parameter is set to True;
-3. The name of the column containing the channels in the original DataFrame is informed though the *channels_colname* parameter;
-4. The name of the boolean column that determines wether there is a conversion or not is informed through the *journey_with_conv_colname* parameter;
-5. The list containing the names of the columns used to compose the journey id is informed through the *group_channels_by_id_list*. Although the list could be longer, we're creating this id based on conversions (see item 7), so the user id alone is enough.
-6. The start time of each session is informed in the *group_timestamp_colname* parameter as the name of said column in the original Data Frame. It can be a date or a timestamp.
-7. And finally, in our scenario, we want to generate a journey id based on the columns already indicated on the parameters *group_channels_by_id_list* and *journey_with_conv_colname* by setting *create_journey_id_based_on_conversion* as **True**.
+### 1. Formato 1: Sessões Individuais (`format_type="session"`)
+Cada linha representa um ponto de contato individual no tempo.
+```python
+import polars as pl
+from mam.core import MAM
+
+df = pl.DataFrame({
+    "user_id": ["u1", "u1", "u1", "u2", "u2"],
+    "datetime": ["2026-01-01 10:00:00", "2026-01-01 11:00:00", "2026-01-01 12:00:00", "2026-01-01 09:00:00", "2026-01-01 15:00:00"],
+    "channel": ["Google_Search", "Meta_Ads", "Direct", "Organic_Search", "Email"],
+    "conversion": [False, False, True, False, True]
+})
+
+mam = MAM(
+    df=df,
+    format_type="session",
+    channels_colname="channel",
+    journey_with_conv_colname="conversion",
+    datetime_colname="datetime",
+    user_id_colname="user_id"
+)
+```
+
+### 2. Formato 2: Jornadas Lineares por Linha (`format_type="journey"`)
+Cada linha representa uma jornada completa de um usuário, com os canais e tempos encadeados por um separador (ex: `" > "`).
+```python
+df = pl.DataFrame({
+    "journey_id": ["j1", "j2"],
+    "journey": ["Google_Search > Meta_Ads > Direct", "Organic_Search > Email"],
+    "conversion": [True, True],
+    "time_till_end": ["72.0 > 36.0 > 0.0", "120.0 > 0.0"] # tempos decrescentes (horas)
+})
+
+mam = MAM(
+    df=df,
+    format_type="journey",
+    channels_colname="journey",
+    journey_with_conv_colname="conversion",
+    time_till_conv_colname="time_till_end"
+)
+```
+
+### 3. Formato 3: Jornadas Agrupadas com Frequência (`format_type="grouped_journey"`)
+Caminhos agregados sem carimbo temporal, contendo uma coluna de peso/frequência (`occurrences`).
+```python
+df = pl.DataFrame({
+    "journey": ["Google_Search > Meta_Ads", "Organic_Search > Direct"],
+    "conversion": [True, False],
+    "occurrences": [150, 430]
+})
+
+mam = MAM(
+    df=df,
+    format_type="grouped_journey",
+    channels_colname="journey",
+    journey_with_conv_colname="conversion",
+    occurrences_colname="occurrences"
+)
+```
+
+---
+
+## 🔍 Journey Analysis Toolbox (JAToolbox)
+
+A `JAToolbox` oferece ferramentas estatísticas poderosas para análise exploratória de touchpoints e caminhos de conversão, totalmente integrada com Polars (e com suporte automático a Pandas).
+
+Há duas formas principais de utilizar a `JAToolbox`:
+
+### 🔹 Opção 1: Diretamente através de uma instância do `MAM` (Recomendado)
+Se você já instanciou o orquestrador `MAM`, você pode acessar a `JAToolbox` pré-configurada diretamente pela propriedade `.jatoolbox`:
 
 ```python
-attributions = MAM(df,
-    group_channels=True,
-    channels_colname = 'channels',
-    journey_with_conv_colname= 'has_transaction',
-    group_channels_by_id_list=['user_id'],
-    group_timestamp_colname = 'visitStartTime',
-    create_journey_id_based_on_conversion = True)
+from mam import MAM
+
+# 1. Instancia o orquestrador MAM normalmente
+mam = MAM(df=df, format_type="journey", channels_colname="journey", journey_with_conv_colname="conversion")
+
+# 2. Acessa a JAToolbox já pré-configurada com os dados unificados
+jatoolbox = mam.jatoolbox
 ```
 
-In order to explore and understand the capabilities of MAM, a "Random DataFrame Generator" was implemented through the use of ***random_df*** parameter when set to **True**.
+### 🔹 Opção 2: Instanciação Manual (Suporta Pandas e Polars)
+Você também pode instanciar a `JAToolbox` de forma avulsa. Ela aceita DataFrames do Polars ou Pandas (convertendo de Pandas para Polars sob o capô automaticamente):
 
 ```python
-attributions = MAM(random_df=True)
+from mam import JAToolbox
+
+# Inicializando com um DataFrame que já possui listas de canais
+jatoolbox = JAToolbox(df=df_unificado, channels_col="channels")
 ```
-    
-After the Object MAM is created, we can check out our database now with the addition of our **journey_id** and with sessions grouped in **journeys** using the **attriute *".DataFrame"***.
+
+Se os seus dados estiverem brutos (não unificados), a `JAToolbox` é capaz de realizar o pré-processamento interno automático no próprio construtor:
 
 ```python
-attributions.DataFrame
+from mam import JAToolbox
+
+# Inicializando e pré-processando dados brutos do Formato 2 (journey) de forma transparente
+jatoolbox = JAToolbox(
+    df=df_bruto,
+    format_type="journey",
+    channels_col="jornada_original",
+    journey_with_conv_colname="conversao_original",
+    time_till_conv_colname="tempo_para_conversao"
+)
 ```
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>journey_id</th>
-      <th>channels_agg</th>
-      <th>time_till_conv_agg</th>
-      <th>converted_agg</th>
-      <th>conversion_value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>id:0_J:0</td>
-      <td>Facebook</td>
-      <td>0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>id:0_J:1</td>
-      <td>Google Search</td>
-      <td>0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>id:0_J:10</td>
-      <td>Google Search &gt; Organic &gt; Email Marketing</td>
-      <td>72.0 &gt; 24.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>id:0_J:11</td>
-      <td>Organic</td>
-      <td>0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>id:0_J:12</td>
-      <td>Email Marketing &gt; Facebook</td>
-      <td>432.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <td>20341</td>
-      <td>id:9_J:5</td>
-      <td>Direct &gt; Facebook</td>
-      <td>120.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20342</td>
-      <td>id:9_J:6</td>
-      <td>Google Search &gt; Google Search &gt; Google Search</td>
-      <td>48.0 &gt; 24.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20343</td>
-      <td>id:9_J:7</td>
-      <td>Organic &gt; Organic &gt; Google Search &gt; Google Search</td>
-      <td>480.0 &gt; 480.0 &gt; 288.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20344</td>
-      <td>id:9_J:8</td>
-      <td>Direct &gt; Organic</td>
-      <td>168.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20345</td>
-      <td>id:9_J:9</td>
-      <td>Google Search &gt; Organic &gt; Google Search &gt; Emai...</td>
-      <td>528.0 &gt; 528.0 &gt; 408.0 &gt; 240.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-  </tbody>
-</table>
 
-
-This attribute is **updated** for **every attribution model** generated. Only in the case of heuristic models, a new column is appended containing the attribution value given by said model.
-
->**Note:** The attribute *.DataFrame* does not interfere with any model calculations. Should it be altered by usage, the following results aren't affected.
+### 📈 Exemplos de Análise Estatística
+Uma vez obtida ou instanciada a sua `JAToolbox`, você pode realizar diversas análises exploratórias:
 
 ```python
-attributions.attribution_last_click()
-attributions.DataFrame
+# 1. Obter o tamanho das jornadas (quantidade de touchpoints por linha)
+tamanhos = jatoolbox.get_size()
+
+# 2. Obter a contagem ponderada (volume real) de aparições por canal
+contagens = jatoolbox.get_tps_counts()
+
+# 3. Obter transições ponto a ponto (matriz de transição detalhada)
+transicoes = jatoolbox.get_transitions(count=True, norm=True)
+
+# 4. Obter a distribuição de canais por posição da jornada (estágios/etapas de conversão)
+estagios_df = jatoolbox.channels_by_tp(max_journey_size=5)
 ```
 
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>journey_id</th>
-      <th>channels_agg</th>
-      <th>time_till_conv_agg</th>
-      <th>converted_agg</th>
-      <th>conversion_value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>id:0_J:0</td>
-      <td>Facebook</td>
-      <td>0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>id:0_J:1</td>
-      <td>Google Search</td>
-      <td>0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>id:0_J:10</td>
-      <td>Google Search &gt; Organic &gt; Email Marketing</td>
-      <td>72.0 &gt; 24.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>id:0_J:11</td>
-      <td>Organic</td>
-      <td>0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>id:0_J:12</td>
-      <td>Email Marketing &gt; Facebook</td>
-      <td>432.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <td>20341</td>
-      <td>id:9_J:5</td>
-      <td>Direct &gt; Facebook</td>
-      <td>120.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20342</td>
-      <td>id:9_J:6</td>
-      <td>Google Search &gt; Google Search &gt; Google Search</td>
-      <td>48.0 &gt; 24.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20343</td>
-      <td>id:9_J:7</td>
-      <td>Organic &gt; Organic &gt; Google Search &gt; Google Search</td>
-      <td>480.0 &gt; 480.0 &gt; 288.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20344</td>
-      <td>id:9_J:8</td>
-      <td>Direct &gt; Organic</td>
-      <td>168.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-    <tr>
-      <td>20345</td>
-      <td>id:9_J:9</td>
-      <td>Google Search &gt; Organic &gt; Google Search &gt; Emai...</td>
-      <td>528.0 &gt; 528.0 &gt; 408.0 &gt; 240.0 &gt; 0.0</td>
-      <td>True</td>
-      <td>1</td>
-    </tr>
-  </tbody>
-</table>
+---
 
+## 📊 Executando os Modelos de Atribuição
 
-Usually the volume of data worked with is extensive, so it is impractical or even impossible to analyse results attributed to **each** journey with transaction. With the attribute ***group_by_channels_models***, however, all results can be seen grouped by channel.
+Cada modelo de atribuição é instanciado e executado através de métodos simples que retornam um objeto `AttributionResult`.
 
->**Note**: Grouped results **do not overwrite** each other in case the same model is used in two distinct instances. Both (or even more) of them are shown in "*group_by_channels_models*".
+### 🔹 Modelos Heurísticos
+```python
+# Last Click (Atribui 100% ao último ponto de contato)
+res_last = mam.run_last_click()
+
+# First Click (Atribui 100% ao primeiro ponto de contato)
+res_first = mam.run_first_click()
+
+# Linear (Distribui o valor igualmente entre todos os canais)
+res_linear = mam.run_linear()
+
+# Position Based (Atribui 40% ao primeiro, 40% ao último e divide 20% no meio)
+res_position = mam.run_position_based()
+
+# Time Decay (Decaimento contínuo baseado em meia-vida exponencial - requer dados temporais)
+res_decay = mam.run_time_decay(half_life_hours=168.0)
+```
+
+### 🔹 Modelos Algorítmicos
+
+#### Cadeias de Markov
+Calcula a probabilidade de conversão e atribui pesos a cada canal usando a taxa de efeito de remoção (Removal Effect).
+```python
+res_markov = mam.run_markov(transition_to_same_state=False)
+
+# Metadados adicionais do modelo
+matriz_transicao = res_markov.metadata["transition_matrix"]
+efeito_remocao = res_markov.metadata["removal_effect"]
+```
+
+#### Valor de Shapley
+Aplica conceitos de Teoria dos Jogos Cooperativos para avaliar a contribuição marginal de cada canal nas combinações de jornadas. Ele conta com **normalização por jornada**, evitando a inflação artificial em caminhos com touchpoints repetidos.
+```python
+res_shapley = mam.run_shapley(max_size=4, value_column="conv_rate")
+
+# Tabela de conversão agrupada de coalizões gerada
+conv_table = res.metadata["conv_table"]
+```
+
+---
+
+## 📈 Geração de Relatórios Visuais e BI
+
+Você pode facilmente gerar relatórios ricos e interativos em HTML, além de exportar dados consolidados em formato JSON ideal para ferramentas de Business Intelligence (BI):
 
 ```python
-attributions.group_by_channels_models
+# Gera um One-Page Report em HTML interativo com Plotly e exporta os dados limpos para BI em JSON
+mam.generate_report(
+    models=["last_click", "first_click", "linear", "position_based", "time_decay", "markov", "shapley"],
+    output_html_path="relatorio_atribuicao.html",
+    output_json_path="exportacao_bi.json"
+)
 ```
 
-<table>
-  <thead>
-    <tr>
-      <th>channels</th>
-      <th>attribution_last_click_heuristic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Direct</td>
-      <td>2133</td>
-    </tr>
-    <tr>
-      <td>Email Marketing</td>
-      <td>1033</td>
-    </tr>
-    <tr>
-      <td>Facebook</td>
-      <td>3168</td>
-    </tr>
-    <tr>
-      <td>Google Display</td>
-      <td>1073</td>
-    </tr>
-    <tr>
-      <td>Google Search</td>
-      <td>4255</td>
-    </tr>
-    <tr>
-      <td>Instagram</td>
-      <td>1028</td>
-    </tr>
-    <tr>
-      <td>Organic</td>
-      <td>6322</td>
-    </tr>
-    <tr>
-      <td>Youtube</td>
-      <td>1093</td>
-    </tr>
-  </tbody>
-</table>
+---
 
+## 🧪 Testes de Validação e Estabilidade
 
-As with the *.DataFrame* attribute, *group_by_channels_models* is also updated for every model used **without the limitation** of not displaying algorithmic results.
+A biblioteca é exaustivamente testada por meio de testes unitários integrados e de um validador de migração ponta a ponta.
 
-```python
-attributions.attribution_shapley()
-attributions.group_by_channels_models
+### Executando Testes Unitários:
+```bash
+pytest
 ```
 
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>channels</th>
-      <th>attribution_last_click_heuristic</th>
-      <th>attribution_shapley_size4_conv_rate_algorithmic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>109</td>
-      <td>74.926849</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Email Marketing</td>
-      <td>54</td>
-      <td>70.558428</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Facebook</td>
-      <td>160</td>
-      <td>160.628945</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Google Display</td>
-      <td>65</td>
-      <td>110.649352</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Google Search</td>
-      <td>193</td>
-      <td>202.179519</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td>Instagram</td>
-      <td>64</td>
-      <td>72.982433</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td>Organic</td>
-      <td>315</td>
-      <td>265.768549</td>
-    </tr>
-    <tr>
-      <td>7</td>
-      <td>Youtube</td>
-      <td>58</td>
-      <td>60.305925</td>
-    </tr>
-  </tbody>
-</table>
+### Executando a Validação Matemática e de Regressão:
+O script `validate_migration.py` executa o código legado de forma assíncrona ao lado da Nova MAM em um dataset sintético de grande escala, provando a estrita paridade matemática das heurísticas e calculando o ganho de velocidade (speedup):
 
-
-### About the Models
-
-All heuristic models behave the same when using the attributes *.DataFrame* and *.group_by_channels_models*, as explained before, and the **output** of all heuristic **model's methods** return a **tuple** containing two **pandas Series**.
-
-```python
-attribution_first_click = attributions.attribution_first_click()
+```bash
+python validate_migration.py
 ```
 
-The **first** Series of the tuple are the results in a **journey granularity**, similar to the observed in the *.DataFrame* attribute
+---
 
+## 📄 Licença e Contribuição
 
-```python
-attribution_first_click[0]
-```
-
-```
-    0                          [1, 0, 0, 0, 0]
-    1                                      [1]
-    2              [1, 0, 0, 0, 0, 0, 0, 0, 0]
-    3                                   [1, 0]
-    4                                      [1]
-                           ...                
-    20512                               [1, 0]
-    20513                            [1, 0, 0]
-    20514    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    20515                            [1, 0, 0]
-    20516                         [1, 0, 0, 0]
-    Length: 20517, dtype: object
-```
-
-The **second** one contains the results with a **channel granularity**, as seen in the **.group_by_channels_models** attribute.    
-
-```python
-attribution_first_click[1]
-```
-
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>channels</th>
-      <th>attribution_first_click_heuristic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>2078</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Email Marketing</td>
-      <td>1095</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Facebook</td>
-      <td>3177</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Google Display</td>
-      <td>1066</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Google Search</td>
-      <td>4259</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td>Instagram</td>
-      <td>1007</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td>Organic</td>
-      <td>6361</td>
-    </tr>
-    <tr>
-      <td>7</td>
-      <td>Youtube</td>
-      <td>1062</td>
-    </tr>
-  </tbody>
-</table>
-
-
-#### Customizing Models
-
-Of all models present in the Object MAM, only Last Click, First Click and Linear have **no customizable parameters** but *group_by_channels_models*, which has a **boolean value** that when set to **False** the model doesn't return the attribution goruped by channels.
-
-##### Last Click Non- Model 
-
-Created to replicate Google Analytics' default attriution (*Last Click Non Direct*) in which **Direct traffic** is **overwritten** in case previous interations have a specific traffic source other than Direct itself in a given timespan (6 months by default).
-
-If unspecified, the parameter *but_not_this_channel* is set to *'Direct'*, but it can be set to any other channel of interest to the business.
-
-```python
-attributions.attribution_last_click_non(but_not_this_channel='Direct')[1]
-```
-
-<table>
-  <thead>
-    <tr>
-      <th>channels</th>
-      <th>attribution_last_click_non_Direct_heuristic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>11</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Email Marketing</td>
-      <td>60</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Facebook</td>
-      <td>172</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Google Display</td>
-      <td>69</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Google Search</td>
-      <td>224</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td>Instagram</td>
-      <td>67</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td>Organic</td>
-      <td>350</td>
-    </tr>
-    <tr>
-      <td>7</td>
-      <td>Youtube</td>
-      <td>65</td>
-    </tr>
-  </tbody>
-</table>
-
-##### Position Based Model 
-
-This model has a parameter *list_positions_first_middle_last* in which the weights respective to the positions of channels in each journey can me specified according to **business related** decisions. The default distribution of the parameter is **40%** for the **introducing** channel, **40%** for the **converting / last** channel and **20%** for the **intermidiate** ones.
-
-```python
-attributions.attribution_position_based(list_positions_first_middle_last=[0.3, 0.3, 0.4])[1]
-```
-
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>channels</th>
-      <th>attribution_position_based_0.3_0.3_0.4_heuristic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>95.685085</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Email Marketing</td>
-      <td>57.617191</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Facebook</td>
-      <td>145.817501</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Google Display</td>
-      <td>56.340693</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Google Search</td>
-      <td>193.282305</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td>Instagram</td>
-      <td>54.678557</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td>Organic</td>
-      <td>288.148896</td>
-    </tr>
-    <tr>
-      <td>7</td>
-      <td>Youtube</td>
-      <td>55.629772</td>
-    </tr>
-  </tbody>
-</table>
-
-
-##### **Time Decay Model** 
-
-There are two customizable settings: The **decay rate**, throght the *decay_over_time** parameter, and the time (in hours) **between each decaiment** through the *frequency* parameter.
-
-It is worth noting, however, that in case there is more than one touchpoint between frequency intervals the conversion value will be equally distributed among these channels.
-
-As an example:
-- **Channels:** Facebook > Organic > Paid Search
-- **Time between touchpoints:** 14 > 12 > 0
-- **Decay Frequence:** 7
-- **Results:**
-  - 25% goes to Facebook;
-  - 25% goes to Organic;
-  - 50% goes to Paid Search;
-  
-```python
-attributions.attribution_time_decay(
-    decay_over_time=0.6,
-    frequency=7)[1]
-```
-
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>channels</th>
-      <th>attribution_time_decay0.6_freq7_heuristic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>108.679538</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Email Marketing</td>
-      <td>54.425914</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Facebook</td>
-      <td>159.592216</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Google Display</td>
-      <td>64.350107</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Google Search</td>
-      <td>192.838884</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td>Instagram</td>
-      <td>64.611414</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td>Organic</td>
-      <td>314.920082</td>
-    </tr>
-    <tr>
-      <td>7</td>
-      <td>Youtube</td>
-      <td>58.581845</td>
-    </tr>
-  </tbody>
-</table>
-
-
-##### Markov Chains
-
-Uppon being called, this model returns a tuple with **four** components. The first two (indexed 0 and 1) are just like with the heuristic models, with the representation of the *.DataFrame* and *.group_by_channels_models* respectively. As for the third and fourth components (indexed 2 and 3) the results are the **transition matrix** and the **removal effect table**.
-
-To start off, it is possible to indicate if same **state transitions** are considered or not (*e.g.* Direct to Direct).
-
-```python
-attribution_markov = attributions.attribution_markov(transition_to_same_state=False)
-```
-
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>channels</th>
-      <th>attribution_markov_algorithmic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>2305.324362</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Email Marketing</td>
-      <td>1237.400774</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Facebook</td>
-      <td>3273.918832</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Youtube</td>
-      <td>1231.183938</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Google Search</td>
-      <td>4035.260685</td>
-    </tr>
-    <tr>
-      <td>5</td>
-      <td>Instagram</td>
-      <td>1205.949095</td>
-    </tr>
-    <tr>
-      <td>6</td>
-      <td>Organic</td>
-      <td>5358.270644</td>
-    </tr>
-    <tr>
-      <td>7</td>
-      <td>Google Display</td>
-      <td>1213.691671</td>
-    </tr>
-  </tbody>
-</table>
-
-
-This configuration **does not affect** the overall attributed results for each channel, but the values observed in the **transition matrix**. Because we set *transition_to_same_state* to **False**, the diagonal, indicating states transitioning to themselves, is nulled.
-
-```python
-ax, fig = plt.subplots(figsize=(15,10))
-sns.heatmap(attribution_markov[2].round(3), cmap="YlGnBu", annot=True, linewidths=.5)
-```
-
-![png](readme-images/output_37_1.png)
-
-**Removal Effect**, the fourth *attribution_markov* output, is obtained by the ratio of the difference between the probability of conversion in general and the probability once said channel is removed over the general probability again.
-
-```python
-ax, fig = plt.subplots(figsize=(2,5))
-sns.heatmap(attribution_markov[3].round(3), cmap="YlGnBu", annot=True, linewidths=.5)
-```
-
-![png](readme-images/output_39_1.png)
-
-##### Shapley Value
-
-Finally, the second algorith model of **MAM** whose concept comes from **Game Theory**. The objective here is to distribute the contribution of each player (in our case, channel) in a game of cooperation calculated using combinations of journeys with and without a given channel.
-
-The parameter **size** defines a limit of how **long** a **chain of channels** is in every journey. By default, it's value is set to **4**, meaning only the **four last channels preceding a conversion** are considered.
-
-The calculation method of marginal contributions of each channel can vary with the ***order*** parameter. By default it is set to **False**, which means the contribution is calculated disregarding the order of each channel in the journeys.
-
-```python
-attributions.attribution_shapley(size=4, order=True, values_col='conv_rate')[0]
-```
-
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>combinations</th>
-      <th>conversions</th>
-      <th>total_sequences</th>
-      <th>conversion_value</th>
-      <th>conv_rate</th>
-      <th>attribution_shapley_size4_conv_rate_order_algorithmic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>909</td>
-      <td>926</td>
-      <td>909</td>
-      <td>0.981641</td>
-      <td>[909.0]</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Direct &gt; Email Marketing</td>
-      <td>27</td>
-      <td>28</td>
-      <td>27</td>
-      <td>0.964286</td>
-      <td>[13.948270234099155, 13.051729765900845]</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Direct &gt; Email Marketing &gt; Facebook</td>
-      <td>5</td>
-      <td>5</td>
-      <td>5</td>
-      <td>1.000000</td>
-      <td>[1.6636366232390172, 1.5835883671498818, 1.752...</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Direct &gt; Email Marketing &gt; Facebook &gt; Google D...</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1.000000</td>
-      <td>[0.2563402919193473, 0.2345560799963515, 0.259...</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Direct &gt; Email Marketing &gt; Facebook &gt; Google S...</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1.000000</td>
-      <td>[0.2522517802130265, 0.2401286956930936, 0.255...</td>
-    </tr>
-    <tr>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <td>1278</td>
-      <td>Youtube &gt; Organic &gt; Google Search &gt; Google Dis...</td>
-      <td>1</td>
-      <td>2</td>
-      <td>1</td>
-      <td>0.500000</td>
-      <td>[0.2514214624662836, 0.24872101523605275, 0.24...</td>
-    </tr>
-    <tr>
-      <td>1279</td>
-      <td>Youtube &gt; Organic &gt; Google Search &gt; Instagram</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1.000000</td>
-      <td>[0.2544401477637237, 0.2541071889956603, 0.253...</td>
-    </tr>
-    <tr>
-      <td>1280</td>
-      <td>Youtube &gt; Organic &gt; Instagram</td>
-      <td>4</td>
-      <td>4</td>
-      <td>4</td>
-      <td>1.000000</td>
-      <td>[1.2757196742326997, 1.4712839059493295, 1.252...</td>
-    </tr>
-    <tr>
-      <td>1281</td>
-      <td>Youtube &gt; Organic &gt; Instagram &gt; Facebook</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1</td>
-      <td>1.000000</td>
-      <td>[0.2357631944623868, 0.2610913781266248, 0.247...</td>
-    </tr>
-    <tr>
-      <td>1282</td>
-      <td>Youtube &gt; Organic &gt; Instagram &gt; Google Search</td>
-      <td>3</td>
-      <td>3</td>
-      <td>3</td>
-      <td>1.000000</td>
-      <td>[0.7223482210689489, 0.7769049003203142, 0.726...</td>
-    </tr>
-  </tbody>
-</table>
-
-
-Finally, the parameter indicating what metric is used to calculate the Shapley Value is **values_col**, which by default is set to *conversion rate*. In doing so, journeys **without conversions** are taken into acount. 
-
-It is possible, however, to consider only **literal conversions** when using the model as seen below.
-
-```python
-attributions.attribution_shapley(size=3, order=False, values_col='conversions')[0]
-```
-
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th>combinations</th>
-      <th>conversions</th>
-      <th>total_sequences</th>
-      <th>conversion_value</th>
-      <th>conv_rate</th>
-      <th>attribution_shapley_size3_conversions_algorithmic</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>0</td>
-      <td>Direct</td>
-      <td>11</td>
-      <td>18</td>
-      <td>18</td>
-      <td>0.611111</td>
-      <td>[11.0]</td>
-    </tr>
-    <tr>
-      <td>1</td>
-      <td>Direct &gt; Email Marketing</td>
-      <td>4</td>
-      <td>5</td>
-      <td>5</td>
-      <td>0.800000</td>
-      <td>[2.0, 2.0]</td>
-    </tr>
-    <tr>
-      <td>2</td>
-      <td>Direct &gt; Email Marketing &gt; Google Search</td>
-      <td>1</td>
-      <td>2</td>
-      <td>2</td>
-      <td>0.500000</td>
-      <td>[-3.1666666666666665, -7.666666666666666, 11.8...</td>
-    </tr>
-    <tr>
-      <td>3</td>
-      <td>Direct &gt; Email Marketing &gt; Organic</td>
-      <td>4</td>
-      <td>6</td>
-      <td>6</td>
-      <td>0.666667</td>
-      <td>[-7.833333333333333, -10.833333333333332, 22.6...</td>
-    </tr>
-    <tr>
-      <td>4</td>
-      <td>Direct &gt; Facebook</td>
-      <td>3</td>
-      <td>4</td>
-      <td>4</td>
-      <td>0.750000</td>
-      <td>[-8.5, 11.5]</td>
-    </tr>
-    <tr>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <td>75</td>
-      <td>Instagram &gt; Organic &gt; Youtube</td>
-      <td>46</td>
-      <td>123</td>
-      <td>123</td>
-      <td>0.373984</td>
-      <td>[5.833333333333332, 34.33333333333333, 5.83333...</td>
-    </tr>
-    <tr>
-      <td>76</td>
-      <td>Instagram &gt; Youtube</td>
-      <td>2</td>
-      <td>4</td>
-      <td>4</td>
-      <td>0.500000</td>
-      <td>[2.0, 0.0]</td>
-    </tr>
-    <tr>
-      <td>77</td>
-      <td>Organic</td>
-      <td>64</td>
-      <td>92</td>
-      <td>92</td>
-      <td>0.695652</td>
-      <td>[64.0]</td>
-    </tr>
-    <tr>
-      <td>78</td>
-      <td>Organic &gt; Youtube</td>
-      <td>8</td>
-      <td>11</td>
-      <td>11</td>
-      <td>0.727273</td>
-      <td>[30.5, -22.5]</td>
-    </tr>
-    <tr>
-      <td>79</td>
-      <td>Youtube</td>
-      <td>11</td>
-      <td>15</td>
-      <td>15</td>
-      <td>0.733333</td>
-      <td>[11.0]</td>
-    </tr>
-  </tbody>
-</table>
-
-
-### Visualization
-After obtaining every attribution from different models stored in our ***.group_by_channels_models*** object it is possible to plot and compare results for insights
-
-```python
-attributions.plot()
-```
-![png](readme-images/output_45_1.png)
-
-In case you're only interested in the algorithmic models, this can me specified in the *model_type* parameter.
-
-```python
-attributions.plot(model_type='algorithmic')
-```
-
-![png](readme-images/output_47_1.png)
-
-## 5. Extra: Using the parameter *conversion_value_as_frequency* for Large Datasets
-
-There are common scenarios where the volume of data is extremely large, and this can cause memory or processing issues when running the Markov model. To handle this, we created the `conversion_value_as_frequency` parameter.
-
-In practice, this allows you to use a grouped dataset based on the *journey path*, which can drastically reduce the size of the database while fully preserving the information.
-
-### Concept Example
-
-Suppose that originally our journey database looks like this:
-
-| journey | has_conversion |
-| :--- | :--- |
-| a > a > b | true |
-| a > a > b | true |
-| a > a > b | false |
-| b > a | true |
-| b > a | false |
-| b > a | false |
-| b > a | false |
-| c > b | false |
-| c > b | false |
-| c > b | false |
-| c > b | false |
-| c > b | false |
-| c > b | false |
-
-By applying a transformation to group and count the journeys:
-
-```sql
-SELECT
-  journey,
-  has_conversion,
-  COUNT(*) AS occurrences
-FROM original_database
-  GROUP BY journey, has_conversion
-```
-
-We obtain a new, much smaller table like this:
-
-| journey | has_conversion | occurrences |
-| :--- | :--- | :--- |
-| a > a > b | false | 1 |
-| a > a > b | true | 2 |
-| b > a | false | 3 |
-| b > a | true | 1 |
-| c > b | false | 6 |
-
-We went from 13 rows to just 5 rows. Now imagine this applied in a context with millions of rows where many journey types repeat.
-
-
-### Implementation
-
-To use this grouped data approach in the `MAM` object, you simply point the `conversion_value` parameter to your new frequency column (e.g., `'occurrences'`):
-
-```python
-# Instantiate a new MAM object passing 'occurrences' to 'conversion_value'
-mam_grouped = MAM(df=grouped_df,
-            group_channels=False,
-            conversion_value='occurrences',
-            channels_colname='journey',
-            journey_with_conv_colname='has_conversion',
-            time_till_conv_colname='skip_column')
-```
-
-And then, when calling the Markov method, make sure to set the `conversion_value_as_frequency` parameter to `True`:
-
-```python
-# Pass conversion_value_as_frequency = True to process the grouped data properly
-results_markov_grouped = mam_grouped.attribution_markov(transition_to_same_state=True,
-                                            conversion_value_as_frequency=True)
-```
-
-With this 'trick', we lower the risk of experiencing base size and memory-related issues when running Markov and the result will be the same as if we had used the normal method. 
+Projeto licenciado nos termos internos da DP6. Todas as contribuições devem aderir às convenções descritas no manifesto técnico e passar em 100% da suíte de testes automáticos livres de deprecation warnings.

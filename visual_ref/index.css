@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   TRIFECTA.AI - GLOBAL STYLES
+   ============================================================================ */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-dark-950 text-dark-100 min-h-screen;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /* Glass Card */
+  .glass-card {
+    @apply bg-dark-900/50 backdrop-blur-xl border border-dark-700/50 rounded-2xl;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Gradient Text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 via-accent-400 to-primary-400 bg-clip-text text-transparent;
+    background-size: 200% auto;
+  }
+  
+  /* Primary Button */
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-500 
+           text-white font-semibold rounded-xl
+           hover:from-primary-500 hover:to-primary-400
+           transition-all duration-300 ease-out
+           shadow-lg hover:shadow-glow
+           active:scale-95;
+  }
+  
+  /* Secondary Button */
+  .btn-secondary {
+    @apply px-6 py-3 bg-dark-800 border border-dark-600
+           text-dark-100 font-medium rounded-xl
+           hover:bg-dark-700 hover:border-dark-500
+           transition-all duration-300
+           active:scale-95;
+  }
+  
+  /* Accent Button */
+  .btn-accent {
+    @apply px-6 py-3 bg-gradient-to-r from-accent-600 to-accent-500 
+           text-white font-semibold rounded-xl
+           hover:from-accent-500 hover:to-accent-400
+           transition-all duration-300 ease-out
+           shadow-lg hover:shadow-glow-accent
+           active:scale-95;
+  }
+  
+  /* Input Field */
+  .input-field {
+    @apply w-full px-4 py-3 bg-dark-800 border border-dark-600 
+           rounded-xl text-white placeholder-dark-400
+           focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20
+           transition-all duration-200;
+  }
+  
+  /* Sidebar Link */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl
+           text-dark-300 hover:text-white hover:bg-dark-800/50
+           transition-all duration-200;
+  }
+  
+  .sidebar-link.active {
+    @apply text-white bg-primary-600/20 border-l-4 border-primary-500;
+  }
+  
+  /* KPI Card */
+  .kpi-card {
+    @apply glass-card p-6 flex flex-col gap-2;
+  }
+  
+  .kpi-value {
+    @apply text-3xl font-bold text-white font-display;
+  }
+  
+  .kpi-label {
+    @apply text-sm text-dark-400 uppercase tracking-wide;
+  }
+  
+  .kpi-change {
+    @apply text-sm font-medium;
+  }
+  
+  .kpi-change.positive {
+    @apply text-success-400;
+  }
+  
+  .kpi-change.negative {
+    @apply text-danger-400;
+  }
+  
+  /* Chart Container */
+  .chart-container {
+    @apply glass-card p-6;
+  }
+  
+  .chart-title {
+    @apply text-lg font-semibold text-white mb-4 font-display;
+  }
+  
+  /* Status Badge */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  .status-badge.connected {
+    @apply bg-success-500/20 text-success-400;
+  }
+  
+  .status-badge.disconnected {
+    @apply bg-dark-700 text-dark-400;
+  }
+  
+  .status-badge.pending {
+    @apply bg-warning-500/20 text-warning-400;
+  }
+  
+  /* Connector Card */
+  .connector-card {
+    @apply glass-card p-6 flex flex-col items-center gap-4 
+           hover:border-primary-500/50 transition-all duration-300 cursor-pointer;
+  }
+  
+  /* Slider */
+  .slider {
+    @apply w-full h-2 bg-dark-700 rounded-full appearance-none cursor-pointer;
+  }
+  
+  .slider::-webkit-slider-thumb {
+    @apply w-5 h-5 bg-primary-500 rounded-full appearance-none cursor-pointer
+           shadow-lg hover:bg-primary-400 transition-colors;
+  }
+}
+
+@layer utilities {
+  /* Scrollbar Styling */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.dark.700') transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: theme('colors.dark.700');
+    border-radius: 3px;
+  }
+  
+  /* Glow Effects */
+  .glow-primary {
+    box-shadow: 0 0 30px rgba(12, 142, 230, 0.4);
+  }
+  
+  .glow-accent {
+    box-shadow: 0 0 30px rgba(217, 70, 239, 0.4);
+  }
+}
