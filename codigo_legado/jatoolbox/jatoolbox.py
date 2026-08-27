@@ -127,7 +127,7 @@ class JAToolbox:
         result = splitted_j[-1]
         return result
 
-    def get_nth_tp(self, j, n, separator=" > ", last_if_out = False):
+    def get_nth_tp(self, j, n, separator=" > ", last_if_out=False):
         """
         Returns the n_th touch point of the journey.
 
@@ -155,9 +155,13 @@ class JAToolbox:
         else:
             if last_if_out:
                 result = splitted_j[-1]
-                warnings.warn(f"Index {n} out of range. The last touch point was selected.")
+                warnings.warn(
+                    f"Index {n} out of range. The last touch point was selected."
+                )
             else:
-                raise ValueError(f'Index {n} out of range. Consider set last_if_out as True')
+                raise ValueError(
+                    f"Index {n} out of range. Consider set last_if_out as True"
+                )
 
         return result
 

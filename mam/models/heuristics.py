@@ -124,9 +124,9 @@ class TimeDecayModel(BaseModel):
                 "O cálculo do Time Decay não é possível devido à ausência absoluta de dados temporais na base de entrada."
             )
 
-        exploded_df = df.explode(
-            ["channels", "time_till_conv"]
-        ).rename({"time_till_conv": "hours"})
+        exploded_df = df.explode(["channels", "time_till_conv"]).rename(
+            {"time_till_conv": "hours"}
+        )
 
         # Aplicação da fórmula de decaimento exponencial
         decayed_df = exploded_df.with_columns(

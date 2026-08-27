@@ -525,7 +525,7 @@ class MAM:
         sort_model=None,
         number_of_channels=10,
         other_df=None,
-        **kwargs
+        **kwargs,
     ):
         """Barplot of the results that were generated and stored on the
         variable self.group_by_channels_models.
