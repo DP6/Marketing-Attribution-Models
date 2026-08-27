@@ -904,7 +904,7 @@ def generate_report(
                             </div>
                         </div>
                         <div class="mt-2">
-                            {{ plotly_divs.tp_all }}
+                            {{ plotly_divs.tp_all|safe }}
                         </div>
                     </div>
 
@@ -929,7 +929,7 @@ def generate_report(
                             </div>
                         </div>
                         <div class="mt-2">
-                            {{ plotly_divs.tp_conv }}
+                            {{ plotly_divs.tp_conv|safe }}
                         </div>
                     </div>
 
@@ -954,7 +954,7 @@ def generate_report(
                             </div>
                         </div>
                         <div class="mt-2">
-                            {{ plotly_divs.tp_non_conv }}
+                            {{ plotly_divs.tp_non_conv|safe }}
                         </div>
                     </div>
                 </div>
@@ -990,7 +990,7 @@ def generate_report(
                             </div>
                         </div>
                         <div class="mt-2">
-                            {{ plotly_divs.dur_all }}
+                            {{ plotly_divs.dur_all|safe }}
                         </div>
                     </div>
 
@@ -1015,7 +1015,7 @@ def generate_report(
                             </div>
                         </div>
                         <div class="mt-2">
-                            {{ plotly_divs.dur_conv }}
+                            {{ plotly_divs.dur_conv|safe }}
                         </div>
                     </div>
 
@@ -1040,7 +1040,7 @@ def generate_report(
                             </div>
                         </div>
                         <div class="mt-2">
-                            {{ plotly_divs.dur_non_conv }}
+                            {{ plotly_divs.dur_non_conv|safe }}
                         </div>
                     </div>
                 </div>
@@ -1105,7 +1105,7 @@ def generate_report(
                 <div class="grid grid-cols-1 gap-8">
                     {% for m_name, chart_div in attribution_charts.items() %}
                     <div class="bg-dark-900/30 border border-dark-800 rounded-xl p-4">
-                        {{ chart_div }}
+                        {{ chart_div|safe }}
                     </div>
                     {% endfor %}
                 </div>
@@ -1124,7 +1124,7 @@ def generate_report(
             <div class="glass-card p-6">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
                     <div class="lg:col-span-2">
-                        {{ markov_scatter }}
+                        {{ markov_scatter|safe }}
                     </div>
                     <div class="bg-dark-900/40 border border-dark-800 rounded-lg p-5 text-sm text-dark-300 h-full flex flex-col justify-center">
                         <h4 class="text-lg font-semibold text-white font-display mb-2">Engajamento vs. Conversão Direta</h4>
@@ -1143,16 +1143,16 @@ def generate_report(
             <!-- TOP INICIADORES E CONVERSORES EM LADO A LADO (MESMA LARGURA) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="glass-card p-6 flex flex-col gap-4">
-                    {{ markov_starts }}
+                    {{ markov_starts|safe }}
                 </div>
                 <div class="glass-card p-6 flex flex-col gap-4">
-                    {{ markov_conversions }}
+                    {{ markov_conversions|safe }}
                 </div>
             </div>
 
             <!-- MATRIZ DE TRANSIÇÃO DE MARKOV (LARGURA TOTAL NA BASE) -->
             <div class="glass-card p-6">
-                {{ markov_transitions }}
+                {{ markov_transitions|safe }}
             </div>
         </section>
         {% endif %}
@@ -1191,7 +1191,7 @@ def generate_report(
         render_context["markov_scatter"] = plotly_divs["markov_scatter"]
         render_context["markov_transitions"] = plotly_divs["markov_transitions"]
 
-    template = Template(html_template)
+    template = Template(html_template, autoescape=True)
     html_content = template.render(render_context)
 
     with open(output_html_path, "w", encoding="utf-8") as f:
