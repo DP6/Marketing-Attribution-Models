@@ -30,7 +30,7 @@ class JAToolbox:
         Esta ferramenta suporta dois modos principais de inicialização:
 
         1. Inicialização Direta (Dados já Unificados):
-           Útil quando você já possui um DataFrame pré-processado no formato unificado interno 
+           Útil quando você já possui um DataFrame pré-processado no formato unificado interno
            da Nova MAM (coluna de canais como lista de strings/categorias, coluna de tempo e coluna de pesos).
            Neste modo, basta passar o DataFrame (Polars ou Pandas).
 
@@ -42,10 +42,10 @@ class JAToolbox:
         Parâmetros
         ----------
         df : pl.DataFrame ou pd.DataFrame, opcional
-            O conjunto de dados contendo as jornadas de marketing. Pode ser fornecido em formato Polars ou Pandas 
+            O conjunto de dados contendo as jornadas de marketing. Pode ser fornecido em formato Polars ou Pandas
             (que será convertido automaticamente para Polars sob o capô).
         channels_col : str, padrão "channels"
-            Nome da coluna que contém os canais de marketing. No Modo 1, deve ser uma lista. No Modo 2, 
+            Nome da coluna que contém os canais de marketing. No Modo 1, deve ser uma lista. No Modo 2,
             deve apontar para a coluna original com o caminho (ex: "google > facebook").
         time_col : str, padrão "time_till_conv"
             Nome da coluna que contém o tempo até a conversão. Relevante no Modo 1.
@@ -88,6 +88,7 @@ class JAToolbox:
         """
         if df is not None and format_type is not None:
             from .preprocessing import MAMPipeline
+
             self.df = MAMPipeline.preprocess(
                 df=df,
                 format_type=format_type,
@@ -119,19 +120,25 @@ class JAToolbox:
             raise ValueError("Nenhum DataFrame foi fornecido.")
         return target_df
 
-    def get_size(self, df: Optional[pl.DataFrame] = None, channels_col: Optional[str] = None) -> pl.Series:
+    def get_size(
+        self, df: Optional[pl.DataFrame] = None, channels_col: Optional[str] = None
+    ) -> pl.Series:
         """Calcula o número de touchpoints em cada jornada."""
         target_df = self._get_df(df)
         col = channels_col or self.channels_col
         return target_df[col].list.len()
 
-    def get_first_tp(self, df: Optional[pl.DataFrame] = None, channels_col: Optional[str] = None) -> pl.Series:
+    def get_first_tp(
+        self, df: Optional[pl.DataFrame] = None, channels_col: Optional[str] = None
+    ) -> pl.Series:
         """Retorna o primeiro touchpoint de cada jornada."""
         target_df = self._get_df(df)
         col = channels_col or self.channels_col
         return target_df[col].list.first()
 
-    def get_last_tp(self, df: Optional[pl.DataFrame] = None, channels_col: Optional[str] = None) -> pl.Series:
+    def get_last_tp(
+        self, df: Optional[pl.DataFrame] = None, channels_col: Optional[str] = None
+    ) -> pl.Series:
         """Retorna o último touchpoint de cada jornada."""
         target_df = self._get_df(df)
         col = channels_col or self.channels_col
@@ -152,11 +159,17 @@ class JAToolbox:
             # Se algum item estiver fora do range, levanta erro para paridade com legado
             any_out = (target_df[col].list.len() <= n).any()
             if any_out:
-                raise ValueError(f"Index {n} out of range. Considere usar last_if_out=True")
+                raise ValueError(
+                    f"Index {n} out of range. Considere usar last_if_out=True"
+                )
 
         expr = pl.col(col).list.slice(n, 1).list.first()
         if last_if_out:
-            expr = pl.when(pl.col(col).list.len() > n).then(expr).otherwise(pl.col(col).list.last())
+            expr = (
+                pl.when(pl.col(col).list.len() > n)
+                .then(expr)
+                .otherwise(pl.col(col).list.last())
+            )
 
         return target_df.select(expr).to_series()
 
@@ -187,14 +200,16 @@ class JAToolbox:
 
         tps_counts = (
             target_df.select([c_col, w_col])
-            .explode(c_col, empty_as_null=True)
+            .explode(c_col)
             .group_by(c_col)
             .agg(pl.col(w_col).sum().alias("count"))
             .rename({c_col: "channels"})
         )
         if norm:
             total = tps_counts["count"].sum()
-            tps_counts = tps_counts.with_columns((pl.col("count") / total).alias("count"))
+            tps_counts = tps_counts.with_columns(
+                (pl.col("count") / total).alias("count")
+            )
         return tps_counts.sort("count", descending=True)
 
     def skip_tp(
@@ -218,7 +233,9 @@ class JAToolbox:
         """Retorna as jornadas sem nenhum dos canais presentes no grupo especificado."""
         target_df = self._get_df(df)
         col = channels_col or self.channels_col
-        expr = pl.col(col).list.eval(pl.element().filter(~pl.element().is_in(tps_to_skip)))
+        expr = pl.col(col).list.eval(
+            pl.element().filter(~pl.element().is_in(tps_to_skip))
+        )
         return target_df.with_columns(expr)
 
     def check_tp(
@@ -241,10 +258,7 @@ class JAToolbox:
         """Verifica a presença de cada um dos canais em um grupo especificado."""
         target_df = self._get_df(df)
         col = channels_col or self.channels_col
-        exprs = [
-            pl.col(col).list.contains(tp).alias(tp)
-            for tp in tp_group_to_check
-        ]
+        exprs = [pl.col(col).list.contains(tp).alias(tp) for tp in tp_group_to_check]
         return target_df.select(exprs)
 
     def get_tp_counts(
@@ -257,7 +271,12 @@ class JAToolbox:
         """Calcula quantas vezes um touchpoint aparece em cada jornada."""
         target_df = self._get_df(df)
         col = channels_col or self.channels_col
-        count_expr = pl.col(col).list.eval(pl.element().filter(pl.element() == tp).len()).list.first().fill_null(0)
+        count_expr = (
+            pl.col(col)
+            .list.eval(pl.element().filter(pl.element() == tp).len())
+            .list.first()
+            .fill_null(0)
+        )
         if norm:
             count_expr = count_expr / pl.col(col).list.len()
         return target_df.select(count_expr).to_series()
@@ -290,7 +309,9 @@ class JAToolbox:
         """Traduz/substitui nomes de canais em cada jornada usando um dicionário."""
         target_df = self._get_df(df)
         col = channels_col or self.channels_col
-        expr = pl.col(col).list.eval(pl.element().replace_strict(translation_dict, default=pl.element()))
+        expr = pl.col(col).list.eval(
+            pl.element().replace_strict(translation_dict, default=pl.element())
+        )
         return target_df.with_columns(expr)
 
     def get_transitions(
@@ -310,20 +331,27 @@ class JAToolbox:
         transitions_df = (
             target_df.select([channels_utf8.alias("ch"), w_col])
             .filter(pl.col("ch").list.len() >= 2)
-            .with_columns([
-                pl.col("ch").list.slice(0, pl.col("ch").list.len() - 1).alias("orig_list"),
-                pl.col("ch").list.slice(1, pl.col("ch").list.len() - 1).alias("dest_list")
-            ])
-            .explode(["orig_list", "dest_list"], empty_as_null=True)
+            .with_columns(
+                [
+                    pl.col("ch")
+                    .list.slice(0, pl.col("ch").list.len() - 1)
+                    .alias("orig_list"),
+                    pl.col("ch")
+                    .list.slice(1, pl.col("ch").list.len() - 1)
+                    .alias("dest_list"),
+                ]
+            )
+            .explode(["orig_list", "dest_list"])
         )
         if count:
-            grouped = (
-                transitions_df.group_by(["orig_list", "dest_list"])
-                .agg(pl.col(w_col).sum().alias("count"))
+            grouped = transitions_df.group_by(["orig_list", "dest_list"]).agg(
+                pl.col(w_col).sum().alias("count")
             )
             if norm:
                 total_transitions = grouped["count"].sum()
-                grouped = grouped.with_columns((pl.col("count") / total_transitions).alias("count"))
+                grouped = grouped.with_columns(
+                    (pl.col("count") / total_transitions).alias("count")
+                )
             return grouped.sort("count", descending=True)
         else:
             return transitions_df.select(["orig_list", "dest_list"]).unique()
@@ -340,21 +368,34 @@ class JAToolbox:
         c_col = channels_col or self.channels_col
         w_col = weight_col or self.weight_col
 
-        unique_channels = target_df.select(pl.col(c_col).explode(empty_as_null=True)).unique().filter(pl.col(c_col).is_not_null())[c_col].to_list()
+        unique_channels = (
+            target_df.select(pl.col(c_col).explode())
+            .unique()
+            .filter(pl.col(c_col).is_not_null())[c_col]
+            .to_list()
+        )
         result_df = pl.DataFrame({"channels": unique_channels})
 
         for i in range(max_journey_size):
             col_name = f"tp_{i+1}"
             step_df = (
-                target_df.select([
-                    pl.col(c_col).list.slice(i, 1).list.first().cast(pl.Utf8).alias("channel"),
-                    pl.col(w_col)
-                ])
+                target_df.select(
+                    [
+                        pl.col(c_col)
+                        .list.slice(i, 1)
+                        .list.first()
+                        .cast(pl.Utf8)
+                        .alias("channel"),
+                        pl.col(w_col),
+                    ]
+                )
                 .filter(pl.col("channel").is_not_null())
                 .group_by("channel")
                 .agg(pl.col(w_col).sum().alias(col_name))
             )
-            result_df = result_df.join(step_df, left_on="channels", right_on="channel", how="left").fill_null(0)
+            result_df = result_df.join(
+                step_df, left_on="channels", right_on="channel", how="left"
+            ).fill_null(0)
 
         for i in range(max_journey_size):
             col_name = f"tp_{i+1}"
@@ -370,5 +411,7 @@ class JAToolbox:
     ) -> pl.DataFrame:
         """Determina a contagem total de aparições de cada canal em todo o conjunto de dados."""
         target_df = df if df is not None else self.df
-        tps_counts = self.get_tps_counts(norm=False, df=target_df, channels_col=channels_col, weight_col=weight_col)
+        tps_counts = self.get_tps_counts(
+            norm=False, df=target_df, channels_col=channels_col, weight_col=weight_col
+        )
         return tps_counts.rename({"channels": "Channel", "count": "Count"})

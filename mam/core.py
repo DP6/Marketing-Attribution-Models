@@ -183,10 +183,10 @@ class MAM:
             Uma instância da Journey Analysis Toolbox configurada para o DataFrame unificado.
         """
         from .analysis import JAToolbox
+
         return JAToolbox(
             df=self.unified_df,
             channels_col="channels",
             time_col="time_till_conv",
             weight_col="weight",
         )
-

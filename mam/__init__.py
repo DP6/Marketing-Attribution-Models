@@ -15,7 +15,7 @@ from mam.models import (
     FirstClickModel,
     LinearModel,
     PositionBasedModel,
-    TimeDecayModel
+    TimeDecayModel,
 )
 from mam.reporting import generate_report
 
@@ -32,5 +32,5 @@ __all__ = [
     "LinearModel",
     "PositionBasedModel",
     "TimeDecayModel",
-    "generate_report"
+    "generate_report",
 ]

@@ -15,41 +15,59 @@ class MarkovModel(BaseModel):
     def _build_transition_matrix(self, df: pl.DataFrame):
         # 1. Construção de Caminhos Estendidos
         extended_df = df.with_columns(
-            pl.concat_list([
-                pl.lit(["(inicio)"]),
-                pl.col("channels").cast(pl.List(pl.Utf8)),
-                pl.when(pl.col("has_conversion"))
-                .then(pl.lit(["(conversion)"]))
-                .otherwise(pl.lit(["(null)"]))
-            ]).alias("extended_channels")
+            pl.concat_list(
+                [
+                    pl.lit(["(inicio)"]),
+                    pl.col("channels").cast(pl.List(pl.Utf8)),
+                    pl.when(pl.col("has_conversion"))
+                    .then(pl.lit(["(conversion)"]))
+                    .otherwise(pl.lit(["(null)"])),
+                ]
+            ).alias("extended_channels")
         )
 
         # 2. Criação de Pares de Transição
         transitions_df = (
-            extended_df.with_columns([
-                pl.col("extended_channels").list.slice(0, pl.col("extended_channels").list.len() - 1).alias("orig_list"),
-                pl.col("extended_channels").list.slice(1, pl.col("extended_channels").list.len() - 1).alias("dest_list")
-            ])
-            .explode(["orig_list", "dest_list"], empty_as_null=True)
+            extended_df.with_columns(
+                [
+                    pl.col("extended_channels")
+                    .list.slice(0, pl.col("extended_channels").list.len() - 1)
+                    .alias("orig_list"),
+                    pl.col("extended_channels")
+                    .list.slice(1, pl.col("extended_channels").list.len() - 1)
+                    .alias("dest_list"),
+                ]
+            )
+            .explode(["orig_list", "dest_list"])
             .group_by(["orig_list", "dest_list"])
             .agg(pl.col("weight").sum().alias("transition_count"))
         )
 
         if not self.transition_to_same_state:
-            transitions_df = transitions_df.filter(pl.col("orig_list") != pl.col("dest_list"))
+            transitions_df = transitions_df.filter(
+                pl.col("orig_list") != pl.col("dest_list")
+            )
 
         # 3. Mapeamento de Estados para Índices
-        all_states = set(transitions_df["orig_list"].unique().to_list()) | set(transitions_df["dest_list"].unique().to_list())
+        all_states = set(transitions_df["orig_list"].unique().to_list()) | set(
+            transitions_df["dest_list"].unique().to_list()
+        )
         channels = sorted(list(all_states - {"(inicio)", "(null)", "(conversion)"}))
         channels_names = ["(inicio)"] + channels + ["(null)", "(conversion)"]
         self.channels_names = channels_names
 
         state_to_idx = {name: idx for idx, name in enumerate(channels_names)}
 
-        transitions_with_idx = transitions_df.with_columns([
-            pl.col("orig_list").replace_strict(state_to_idx, return_dtype=pl.Int64).alias("orig_idx"),
-            pl.col("dest_list").replace_strict(state_to_idx, return_dtype=pl.Int64).alias("dest_idx")
-        ])
+        transitions_with_idx = transitions_df.with_columns(
+            [
+                pl.col("orig_list")
+                .replace_strict(state_to_idx, return_dtype=pl.Int64)
+                .alias("orig_idx"),
+                pl.col("dest_list")
+                .replace_strict(state_to_idx, return_dtype=pl.Int64)
+                .alias("dest_idx"),
+            ]
+        )
 
         # 4. Construção da Matriz NumPy
         size = len(channels_names)
@@ -73,7 +91,7 @@ class MarkovModel(BaseModel):
         m_norm = self._normalize_rows(matrix)
         Q = m_norm[:-2, :-2]
         R = m_norm[:-2, -2:]
-        
+
         # Fundamental matrix N = (I - Q)^-1
         N = np.linalg.inv(np.identity(len(Q)) - Q)
         return (N @ R)[0, 1]
@@ -99,7 +117,7 @@ class MarkovModel(BaseModel):
                 conversions[column] = self._calc_total_conversion(temp)
 
             removal_effect_val = 1.0 - (conversions[1:-2] / conversion_orig)
-            
+
             # Normalização dos efeitos de remoção
             sum_re = removal_effect_val.sum()
             if sum_re == 0:
@@ -109,8 +127,12 @@ class MarkovModel(BaseModel):
 
         # Armazenar matriz de transições normatizada
         matrix_norm = self._normalize_rows(matrix)
-        self.transition_matrix_df = pd.DataFrame(matrix_norm, columns=channels_names, index=channels_names)
-        self.removal_effect_df = pd.DataFrame({"removal_effect": removal_effect_val}, index=channels)
+        self.transition_matrix_df = pd.DataFrame(
+            matrix_norm, columns=channels_names, index=channels_names
+        )
+        self.removal_effect_df = pd.DataFrame(
+            {"removal_effect": removal_effect_val}, index=channels
+        )
 
         self._calculated_weights = dict(zip(channels, results))
         return self._calculated_weights
@@ -122,18 +144,17 @@ class MarkovModel(BaseModel):
         channels = list(self._calculated_weights.keys())
         results = list(self._calculated_weights.values())
 
-        weights_df = pl.DataFrame({
-            "channel": channels,
-            "weight_val": results
-        })
+        weights_df = pl.DataFrame({"channel": channels, "weight_val": results})
 
         # Explodir canais e calcular a atribuição proporcional por jornada
-        exploded = df.select(["journey_id", "channels", "has_conversion", "weight"]).explode("channels", empty_as_null=True)
+        exploded = df.select(
+            ["journey_id", "channels", "has_conversion", "weight"]
+        ).explode("channels")
         exploded = exploded.with_columns(pl.col("channels").cast(pl.Utf8))
-        
-        exploded = exploded.join(weights_df, left_on="channels", right_on="channel", how="left").with_columns(
-            pl.col("weight_val").fill_null(0.0)
-        )
+
+        exploded = exploded.join(
+            weights_df, left_on="channels", right_on="channel", how="left"
+        ).with_columns(pl.col("weight_val").fill_null(0.0))
 
         exploded = exploded.with_columns(
             pl.col("weight_val").sum().over("journey_id").alias("sum_weight")
@@ -145,7 +166,11 @@ class MarkovModel(BaseModel):
             .otherwise(0.0)
             .alias("norm_weight")
         ).with_columns(
-            (pl.col("has_conversion").cast(pl.Float64) * pl.col("weight") * pl.col("norm_weight")).alias("attribution_value")
+            (
+                pl.col("has_conversion").cast(pl.Float64)
+                * pl.col("weight")
+                * pl.col("norm_weight")
+            ).alias("attribution_value")
         )
 
         return exploded
@@ -153,8 +178,7 @@ class MarkovModel(BaseModel):
     def get_aggregated_results(self, df: pl.DataFrame) -> pl.DataFrame:
         calc_df = self.calculate(df)
         return (
-            calc_df
-            .group_by("channels")
+            calc_df.group_by("channels")
             .agg(pl.col("attribution_value").sum().alias("attribution"))
             .sort("attribution", descending=True)
         )

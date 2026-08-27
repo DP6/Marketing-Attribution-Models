@@ -3,7 +3,7 @@ from .heuristics import (
     FirstClickModel,
     LinearModel,
     PositionBasedModel,
-    TimeDecayModel
+    TimeDecayModel,
 )
 from .markov import MarkovModel
 from .shapley import ShapleyModel
@@ -15,5 +15,5 @@ __all__ = [
     "PositionBasedModel",
     "TimeDecayModel",
     "MarkovModel",
-    "ShapleyModel"
+    "ShapleyModel",
 ]

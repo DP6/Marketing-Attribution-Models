@@ -9,7 +9,12 @@ class AttributionResult:
     Contém resultados granulares por jornada e resultados agregados por canal.
     """
 
-    def __init__(self, raw_df: pl.DataFrame, aggregated_df: pl.DataFrame, model_metadata: Dict[str, Any]):
+    def __init__(
+        self,
+        raw_df: pl.DataFrame,
+        aggregated_df: pl.DataFrame,
+        model_metadata: Dict[str, Any],
+    ):
         self._raw_df = raw_df
         self._aggregated_df = aggregated_df
         self.metadata = model_metadata
