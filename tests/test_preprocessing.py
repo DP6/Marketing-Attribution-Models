@@ -87,6 +87,7 @@ def test_pipeline_format_1_preprocessing(small_format_1_df):
         "time_till_conv",
         "has_conversion",
         "weight",
+        "conversion_value",
     }
     assert set(unified_df.columns) == expected_cols
 
@@ -98,6 +99,7 @@ def test_pipeline_format_1_preprocessing(small_format_1_df):
     assert unified_df["time_till_conv"].dtype.inner == pl.Float64
     assert unified_df["has_conversion"].dtype == pl.Boolean
     assert unified_df["weight"].dtype == pl.Int64
+    assert unified_df["conversion_value"].dtype == pl.Float64
 
     # Data consistency checks
     # There are 3 unique user_ids: user_1, user_2, user_3
@@ -191,6 +193,7 @@ def test_pipeline_format_2_preprocessing(small_format_2_df):
         "time_till_conv",
         "has_conversion",
         "weight",
+        "conversion_value",
     }
     assert set(unified_df.columns) == expected_cols
 
@@ -202,6 +205,7 @@ def test_pipeline_format_2_preprocessing(small_format_2_df):
     assert unified_df["time_till_conv"].dtype.inner == pl.Float64
     assert unified_df["has_conversion"].dtype == pl.Boolean
     assert unified_df["weight"].dtype == pl.Int64
+    assert unified_df["conversion_value"].dtype == pl.Float64
 
     # Rows count
     assert unified_df.shape[0] == 3
@@ -232,6 +236,7 @@ def test_pipeline_format_3_preprocessing(small_format_3_df):
         "time_till_conv",
         "has_conversion",
         "weight",
+        "conversion_value",
     }
     assert set(unified_df.columns) == expected_cols
 
@@ -243,6 +248,7 @@ def test_pipeline_format_3_preprocessing(small_format_3_df):
     assert unified_df["time_till_conv"].dtype.inner == pl.Float64
     assert unified_df["has_conversion"].dtype == pl.Boolean
     assert unified_df["weight"].dtype == pl.Int64
+    assert unified_df["conversion_value"].dtype == pl.Float64
 
     # Rows count
     assert unified_df.shape[0] == 4

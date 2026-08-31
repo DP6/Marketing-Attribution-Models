@@ -77,11 +77,14 @@ class ShapleyModel(BaseModel):
                     .sum()
                     .alias("conversions"),
                     pl.col("weight").sum().alias("total_sequences"),
+                    (pl.col("conversion_value") * pl.col("weight"))
+                    .sum()
+                    .alias("conversion_value_sum"),
                 ]
             )
             .with_columns(
                 (pl.col("conversions") / pl.col("total_sequences")).alias("conv_rate"),
-                pl.col("conversions").cast(pl.Float64).alias("conversion_value"),
+                pl.col("conversion_value_sum").alias("conversion_value"),
             )
         )
 
@@ -187,6 +190,7 @@ class ShapleyModel(BaseModel):
                 "has_conversion",
                 "weight",
                 "sum_conv_weight",
+                "conversion_value",
             ]
         ).explode("channels")
         exploded = exploded.with_columns(pl.col("channels").cast(pl.Utf8))
@@ -208,7 +212,7 @@ class ShapleyModel(BaseModel):
                     pl.col("attribution_val")
                     * pl.col("weight").cast(pl.Float64)
                     * (
-                        pl.col("has_conversion").cast(pl.Float64)
+                        pl.col("conversion_value")
                         / pl.col("journey_sum_val")
                     )
                 )

@@ -7,7 +7,7 @@ class LastClickModel(BaseModel):
         # Pega o último canal
         return df.with_columns(
             pl.col("channels").list.last().alias("attribution_channel"),
-            (pl.col("has_conversion").cast(pl.Float64) * pl.col("weight")).alias(
+            (pl.col("conversion_value") * pl.col("weight")).alias(
                 "attribution_value"
             ),
         )
@@ -27,7 +27,7 @@ class FirstClickModel(BaseModel):
         # Pega o primeiro canal
         return df.with_columns(
             pl.col("channels").list.first().alias("attribution_channel"),
-            (pl.col("has_conversion").cast(pl.Float64) * pl.col("weight")).alias(
+            (pl.col("conversion_value") * pl.col("weight")).alias(
                 "attribution_value"
             ),
         )
@@ -48,7 +48,7 @@ class LinearModel(BaseModel):
         return df.with_columns(
             [
                 pl.col("channels").list.len().alias("journey_len"),
-                (pl.col("has_conversion").cast(pl.Float64) * pl.col("weight")).alias(
+                (pl.col("conversion_value") * pl.col("weight")).alias(
                     "total_value"
                 ),
             ]
@@ -93,7 +93,7 @@ class PositionBasedModel(BaseModel):
 
         return weighted.with_columns(
             (
-                pl.col("has_conversion").cast(pl.Float64)
+                pl.col("conversion_value")
                 * pl.col("weight")
                 * pl.col("position_weight")
             ).alias("attribution_value")
@@ -147,7 +147,7 @@ class TimeDecayModel(BaseModel):
 
         return decayed_df.with_columns(
             (
-                pl.col("has_conversion").cast(pl.Float64)
+                pl.col("conversion_value")
                 * pl.col("weight")
                 * pl.col("normalized_weight")
             ).alias("attribution_value")
