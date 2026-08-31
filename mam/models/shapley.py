@@ -211,10 +211,7 @@ class ShapleyModel(BaseModel):
                 .then(
                     pl.col("attribution_val")
                     * pl.col("weight").cast(pl.Float64)
-                    * (
-                        pl.col("conversion_value")
-                        / pl.col("journey_sum_val")
-                    )
+                    * (pl.col("conversion_value") / pl.col("journey_sum_val"))
                 )
                 .otherwise(0.0)
                 .alias("attribution_value")

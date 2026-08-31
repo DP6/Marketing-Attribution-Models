@@ -167,9 +167,7 @@ class MarkovModel(BaseModel):
             .alias("norm_weight")
         ).with_columns(
             (
-                pl.col("conversion_value")
-                * pl.col("weight")
-                * pl.col("norm_weight")
+                pl.col("conversion_value") * pl.col("weight") * pl.col("norm_weight")
             ).alias("attribution_value")
         )
 

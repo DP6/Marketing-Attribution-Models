@@ -7,9 +7,7 @@ class LastClickModel(BaseModel):
         # Pega o último canal
         return df.with_columns(
             pl.col("channels").list.last().alias("attribution_channel"),
-            (pl.col("conversion_value") * pl.col("weight")).alias(
-                "attribution_value"
-            ),
+            (pl.col("conversion_value") * pl.col("weight")).alias("attribution_value"),
         )
 
     def get_aggregated_results(self, df: pl.DataFrame) -> pl.DataFrame:
@@ -27,9 +25,7 @@ class FirstClickModel(BaseModel):
         # Pega o primeiro canal
         return df.with_columns(
             pl.col("channels").list.first().alias("attribution_channel"),
-            (pl.col("conversion_value") * pl.col("weight")).alias(
-                "attribution_value"
-            ),
+            (pl.col("conversion_value") * pl.col("weight")).alias("attribution_value"),
         )
 
     def get_aggregated_results(self, df: pl.DataFrame) -> pl.DataFrame:
@@ -48,9 +44,7 @@ class LinearModel(BaseModel):
         return df.with_columns(
             [
                 pl.col("channels").list.len().alias("journey_len"),
-                (pl.col("conversion_value") * pl.col("weight")).alias(
-                    "total_value"
-                ),
+                (pl.col("conversion_value") * pl.col("weight")).alias("total_value"),
             ]
         ).with_columns(
             (pl.col("total_value") / pl.col("journey_len")).alias("split_value")

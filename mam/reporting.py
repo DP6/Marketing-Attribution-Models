@@ -31,8 +31,13 @@ def generate_report(
 
     unified_df = mam_instance.unified_df
     total_journeys = int(unified_df.select(pl.col("weight").sum()).item())
-    total_revenue = float(unified_df.select((pl.col("conversion_value") * pl.col("weight")).sum()).item())
-    is_revenue = hasattr(mam_instance, "conversion_value_colname") and mam_instance.conversion_value_colname is not None
+    total_revenue = float(
+        unified_df.select((pl.col("conversion_value") * pl.col("weight")).sum()).item()
+    )
+    is_revenue = (
+        hasattr(mam_instance, "conversion_value_colname")
+        and mam_instance.conversion_value_colname is not None
+    )
 
     # -------------------------------------------------------------------------
     # 1. PROCESSAMENTO DE INFORMAÇÕES DE JORNADAS (SEÇÃO 1)
@@ -487,11 +492,17 @@ def generate_report(
                 marker_color=model_colors.get(m_name, "#63B3ED"),
                 opacity=0.9,
                 text=[
-                    f"R$ {val:,.2f} ({pct:.1f}%)" if is_revenue else f"{val:,.1f} ({pct:.1f}%)"
+                    (
+                        f"R$ {val:,.2f} ({pct:.1f}%)"
+                        if is_revenue
+                        else f"{val:,.1f} ({pct:.1f}%)"
+                    )
                     for val, pct in zip(sorted_att, sorted_pct)
                 ],
                 textposition="auto",
-                hovertemplate="Canal: %{y}<br>Atribuído: " + ("R$ %{x:,.2f}" if is_revenue else "%{x:,.1f}") + "<br>Percentual: %{text}<extra></extra>",
+                hovertemplate="Canal: %{y}<br>Atribuído: "
+                + ("R$ %{x:,.2f}" if is_revenue else "%{x:,.1f}")
+                + "<br>Percentual: %{text}<extra></extra>",
             )
         )
         fig.update_layout(
@@ -500,7 +511,9 @@ def generate_report(
                 font=dict(family="Ubuntu, sans-serif", size=15, color="#ffffff"),
             ),
             xaxis=dict(
-                title="Receita Atribuída (R$)" if is_revenue else "Conversões Atribuídas",
+                title=(
+                    "Receita Atribuída (R$)" if is_revenue else "Conversões Atribuídas"
+                ),
                 color="#C4C7CB",
                 gridcolor="rgba(255,255,255,0.05)",
             ),

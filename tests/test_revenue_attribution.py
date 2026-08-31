@@ -164,7 +164,10 @@ def test_heuristic_models_revenue_attribution(format_2_revenue_df):
     # For user_1_0 (revenue 150): last channel is meta_ads
     # For user_3_0 (revenue 300): last channel is organic_search
     assert res_last.filter(pl.col("channels") == "meta_ads")["attribution"][0] == 150.0
-    assert res_last.filter(pl.col("channels") == "organic_search")["attribution"][0] == 300.0
+    assert (
+        res_last.filter(pl.col("channels") == "organic_search")["attribution"][0]
+        == 300.0
+    )
 
     # 2. First Click
     res_first = mam.run_first_click().to_polars()
@@ -180,10 +183,16 @@ def test_heuristic_models_revenue_attribution(format_2_revenue_df):
     # user_1_0 has 3 channels: direct, google_search, meta_ads. Each gets 150/3 = 50.0
     # user_3_0 has 2 channels: email, organic_search. Each gets 300/2 = 150.0
     assert res_linear.filter(pl.col("channels") == "direct")["attribution"][0] == 50.0
-    assert res_linear.filter(pl.col("channels") == "google_search")["attribution"][0] == 50.0
+    assert (
+        res_linear.filter(pl.col("channels") == "google_search")["attribution"][0]
+        == 50.0
+    )
     assert res_linear.filter(pl.col("channels") == "meta_ads")["attribution"][0] == 50.0
     assert res_linear.filter(pl.col("channels") == "email")["attribution"][0] == 150.0
-    assert res_linear.filter(pl.col("channels") == "organic_search")["attribution"][0] == 150.0
+    assert (
+        res_linear.filter(pl.col("channels") == "organic_search")["attribution"][0]
+        == 150.0
+    )
 
     # 4. Position Based (40/20/40)
     res_pb = mam.run_position_based().to_polars()

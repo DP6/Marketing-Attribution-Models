@@ -71,7 +71,11 @@ def pipeline_format_1_to_unified(
 
     if conversion_value_col:
         agg_exprs.append(
-            pl.col(conversion_value_col).fill_null(0.0).sum().cast(pl.Float64).alias("conversion_value")
+            pl.col(conversion_value_col)
+            .fill_null(0.0)
+            .sum()
+            .cast(pl.Float64)
+            .alias("conversion_value")
         )
     else:
         agg_exprs.append(
@@ -111,7 +115,10 @@ def pipeline_format_2_to_unified(
 
     if conversion_value_col:
         col_exprs.append(
-            pl.col(conversion_value_col).cast(pl.Float64).fill_null(0.0).alias("conversion_value")
+            pl.col(conversion_value_col)
+            .cast(pl.Float64)
+            .fill_null(0.0)
+            .alias("conversion_value")
         )
     else:
         col_exprs.append(
@@ -122,7 +129,14 @@ def pipeline_format_2_to_unified(
         df.lazy()
         .with_columns(col_exprs)
         .select(
-            ["journey_id", "channels", "time_till_conv", "has_conversion", "weight", "conversion_value"]
+            [
+                "journey_id",
+                "channels",
+                "time_till_conv",
+                "has_conversion",
+                "weight",
+                "conversion_value",
+            ]
         )
     )
     return unified_df.collect()
@@ -140,9 +154,7 @@ def pipeline_format_3_to_unified(
     Converts Format 3 (Grouped Journeys / Frequencies) to the Unified Internal Representation.
     """
     col_exprs = [
-        pl.concat_str([pl.lit("path_"), pl.col("journey_idx")]).alias(
-            "journey_id"
-        ),
+        pl.concat_str([pl.lit("path_"), pl.col("journey_idx")]).alias("journey_id"),
         pl.col(journey_col)
         .str.split(path_separator)
         .cast(pl.List(pl.Categorical))
@@ -150,9 +162,7 @@ def pipeline_format_3_to_unified(
         # Initialize time_till_conv as a list of nulls of the same length (absence of time data)
         pl.col(journey_col)
         .str.split(path_separator)
-        .list.eval(
-            pl.repeat(pl.lit(None, dtype=pl.Float64), pl.element().len())
-        )
+        .list.eval(pl.repeat(pl.lit(None, dtype=pl.Float64), pl.element().len()))
         .alias("time_till_conv"),
         pl.col(has_conv_col).cast(pl.Boolean).alias("has_conversion"),
         pl.col(occurrences_col).cast(pl.Int64).alias("weight"),
@@ -160,7 +170,10 @@ def pipeline_format_3_to_unified(
 
     if conversion_value_col:
         col_exprs.append(
-            pl.col(conversion_value_col).cast(pl.Float64).fill_null(0.0).alias("conversion_value")
+            pl.col(conversion_value_col)
+            .cast(pl.Float64)
+            .fill_null(0.0)
+            .alias("conversion_value")
         )
     else:
         col_exprs.append(
@@ -172,7 +185,14 @@ def pipeline_format_3_to_unified(
         .with_row_index("journey_idx")
         .with_columns(col_exprs)
         .select(
-            ["journey_id", "channels", "time_till_conv", "has_conversion", "weight", "conversion_value"]
+            [
+                "journey_id",
+                "channels",
+                "time_till_conv",
+                "has_conversion",
+                "weight",
+                "conversion_value",
+            ]
         )
     )
     return unified_df.collect()
