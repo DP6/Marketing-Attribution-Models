@@ -10,6 +10,7 @@ def pipeline_format_1_to_unified(
     channel_col: str,
     has_conv_col: str,
     create_journey_id_based_on_conversion: bool = False,
+    conversion_value_col: Optional[str] = None,
 ) -> pl.DataFrame:
     """
     Converts Format 1 (Sessions / Touchpoints) to the Unified Internal Representation.
@@ -20,6 +21,7 @@ def pipeline_format_1_to_unified(
     - time_till_conv: pl.List(pl.Float64)
     - has_conversion: pl.Boolean
     - weight: pl.Int64
+    - conversion_value: pl.Float64
     """
     # Create lazyframe from df
     lf = df.lazy()
@@ -56,18 +58,31 @@ def pipeline_format_1_to_unified(
         lf = lf.with_columns(pl.col(user_id_col).cast(pl.String).alias("journey_id"))
 
     # Aggregate into lists
-    unified_df = lf.group_by("journey_id").agg(
-        [
-            pl.col(channel_col).alias("channels"),
-            # Difference in hours up to the last interaction in the journey
-            (
-                (pl.col(datetime_col).max() - pl.col(datetime_col)).dt.total_seconds()
-                / 3600.0
-            ).alias("time_till_conv"),
-            pl.col(has_conv_col).any().alias("has_conversion"),
-            pl.lit(1, dtype=pl.Int64).alias("weight"),
-        ]
-    )
+    agg_exprs = [
+        pl.col(channel_col).alias("channels"),
+        # Difference in hours up to the last interaction in the journey
+        (
+            (pl.col(datetime_col).max() - pl.col(datetime_col)).dt.total_seconds()
+            / 3600.0
+        ).alias("time_till_conv"),
+        pl.col(has_conv_col).any().alias("has_conversion"),
+        pl.lit(1, dtype=pl.Int64).alias("weight"),
+    ]
+
+    if conversion_value_col:
+        agg_exprs.append(
+            pl.col(conversion_value_col)
+            .fill_null(0.0)
+            .sum()
+            .cast(pl.Float64)
+            .alias("conversion_value")
+        )
+    else:
+        agg_exprs.append(
+            pl.col(has_conv_col).any().cast(pl.Float64).alias("conversion_value")
+        )
+
+    unified_df = lf.group_by("journey_id").agg(agg_exprs)
 
     return unified_df.collect()
 
@@ -79,29 +94,49 @@ def pipeline_format_2_to_unified(
     time_col: str,
     has_conv_col: str,
     path_separator: str = " > ",
+    conversion_value_col: Optional[str] = None,
 ) -> pl.DataFrame:
     """
     Converts Format 2 (Journeys) to the Unified Internal Representation.
     """
+    col_exprs = [
+        pl.col(journey_id_col).cast(pl.String).alias("journey_id"),
+        pl.col(journey_col)
+        .str.split(path_separator)
+        .cast(pl.List(pl.Categorical))
+        .alias("channels"),
+        pl.col(time_col)
+        .str.split(path_separator)
+        .cast(pl.List(pl.Float64))
+        .alias("time_till_conv"),
+        pl.col(has_conv_col).cast(pl.Boolean).alias("has_conversion"),
+        pl.lit(1, dtype=pl.Int64).alias("weight"),
+    ]
+
+    if conversion_value_col:
+        col_exprs.append(
+            pl.col(conversion_value_col)
+            .cast(pl.Float64)
+            .fill_null(0.0)
+            .alias("conversion_value")
+        )
+    else:
+        col_exprs.append(
+            pl.col(has_conv_col).cast(pl.Float64).alias("conversion_value")
+        )
+
     unified_df = (
         df.lazy()
-        .with_columns(
-            [
-                pl.col(journey_id_col).cast(pl.String).alias("journey_id"),
-                pl.col(journey_col)
-                .str.split(path_separator)
-                .cast(pl.List(pl.Categorical))
-                .alias("channels"),
-                pl.col(time_col)
-                .str.split(path_separator)
-                .cast(pl.List(pl.Float64))
-                .alias("time_till_conv"),
-                pl.col(has_conv_col).cast(pl.Boolean).alias("has_conversion"),
-                pl.lit(1, dtype=pl.Int64).alias("weight"),
-            ]
-        )
+        .with_columns(col_exprs)
         .select(
-            ["journey_id", "channels", "time_till_conv", "has_conversion", "weight"]
+            [
+                "journey_id",
+                "channels",
+                "time_till_conv",
+                "has_conversion",
+                "weight",
+                "conversion_value",
+            ]
         )
     )
     return unified_df.collect()
@@ -113,35 +148,51 @@ def pipeline_format_3_to_unified(
     occurrences_col: str,
     has_conv_col: str,
     path_separator: str = " > ",
+    conversion_value_col: Optional[str] = None,
 ) -> pl.DataFrame:
     """
     Converts Format 3 (Grouped Journeys / Frequencies) to the Unified Internal Representation.
     """
+    col_exprs = [
+        pl.concat_str([pl.lit("path_"), pl.col("journey_idx")]).alias("journey_id"),
+        pl.col(journey_col)
+        .str.split(path_separator)
+        .cast(pl.List(pl.Categorical))
+        .alias("channels"),
+        # Initialize time_till_conv as a list of nulls of the same length (absence of time data)
+        pl.col(journey_col)
+        .str.split(path_separator)
+        .list.eval(pl.repeat(pl.lit(None, dtype=pl.Float64), pl.element().len()))
+        .alias("time_till_conv"),
+        pl.col(has_conv_col).cast(pl.Boolean).alias("has_conversion"),
+        pl.col(occurrences_col).cast(pl.Int64).alias("weight"),
+    ]
+
+    if conversion_value_col:
+        col_exprs.append(
+            pl.col(conversion_value_col)
+            .cast(pl.Float64)
+            .fill_null(0.0)
+            .alias("conversion_value")
+        )
+    else:
+        col_exprs.append(
+            pl.col(has_conv_col).cast(pl.Float64).alias("conversion_value")
+        )
+
     unified_df = (
         df.lazy()
         .with_row_index("journey_idx")
-        .with_columns(
-            [
-                pl.concat_str([pl.lit("path_"), pl.col("journey_idx")]).alias(
-                    "journey_id"
-                ),
-                pl.col(journey_col)
-                .str.split(path_separator)
-                .cast(pl.List(pl.Categorical))
-                .alias("channels"),
-                # Initialize time_till_conv as a list of nulls of the same length (absence of time data)
-                pl.col(journey_col)
-                .str.split(path_separator)
-                .list.eval(
-                    pl.repeat(pl.lit(None, dtype=pl.Float64), pl.element().len())
-                )
-                .alias("time_till_conv"),
-                pl.col(has_conv_col).cast(pl.Boolean).alias("has_conversion"),
-                pl.col(occurrences_col).cast(pl.Int64).alias("weight"),
-            ]
-        )
+        .with_columns(col_exprs)
         .select(
-            ["journey_id", "channels", "time_till_conv", "has_conversion", "weight"]
+            [
+                "journey_id",
+                "channels",
+                "time_till_conv",
+                "has_conversion",
+                "weight",
+                "conversion_value",
+            ]
         )
     )
     return unified_df.collect()
@@ -160,6 +211,7 @@ class MAMPipeline:
         occurrences_colname: Optional[str] = None,
         create_journey_id_based_on_conversion: bool = False,
         path_separator: str = " > ",
+        conversion_value_colname: Optional[str] = None,
     ) -> pl.DataFrame:
         """
         Main entrypoint for preprocessing marketing touchpoint data into
@@ -170,6 +222,11 @@ class MAMPipeline:
             df = pl.from_pandas(df)
         elif not isinstance(df, pl.DataFrame):
             raise TypeError("df must be either a Polars or Pandas DataFrame.")
+
+        if conversion_value_colname and conversion_value_colname not in df.columns:
+            raise ValueError(
+                f"Conversion value column '{conversion_value_colname}' not found in DataFrame."
+            )
 
         normalized_format = format_type.lower().strip()
 
@@ -185,6 +242,7 @@ class MAMPipeline:
                 channel_col=channels_colname,
                 has_conv_col=journey_with_conv_colname,
                 create_journey_id_based_on_conversion=create_journey_id_based_on_conversion,
+                conversion_value_col=conversion_value_colname,
             )
 
         elif normalized_format in ("journey", "format_2"):
@@ -208,6 +266,7 @@ class MAMPipeline:
                 time_col=time_col,
                 has_conv_col=journey_with_conv_colname,
                 path_separator=path_separator,
+                conversion_value_col=conversion_value_colname,
             )
 
         elif normalized_format in ("grouped_journey", "format_3"):
@@ -225,6 +284,7 @@ class MAMPipeline:
                 occurrences_col=occurrences_col,
                 has_conv_col=journey_with_conv_colname,
                 path_separator=path_separator,
+                conversion_value_col=conversion_value_colname,
             )
 
         else:

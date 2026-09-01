@@ -31,6 +31,13 @@ def generate_report(
 
     unified_df = mam_instance.unified_df
     total_journeys = int(unified_df.select(pl.col("weight").sum()).item())
+    total_revenue = float(
+        unified_df.select((pl.col("conversion_value") * pl.col("weight")).sum()).item()
+    )
+    is_revenue = (
+        hasattr(mam_instance, "conversion_value_colname")
+        and mam_instance.conversion_value_colname is not None
+    )
 
     # -------------------------------------------------------------------------
     # 1. PROCESSAMENTO DE INFORMAÇÕES DE JORNADAS (SEÇÃO 1)
@@ -324,6 +331,7 @@ def generate_report(
             "total_non_conversions": total_non_conversions,
             "conversion_rate": round(pct_conv, 2),
             "non_conversion_rate": round(pct_non_conv, 2),
+            "total_revenue": round(total_revenue, 2),
         },
         "journey_statistics": {
             "touchpoint_statistics": {
@@ -484,11 +492,17 @@ def generate_report(
                 marker_color=model_colors.get(m_name, "#63B3ED"),
                 opacity=0.9,
                 text=[
-                    f"{val:,.1f} ({pct:.1f}%)"
+                    (
+                        f"R$ {val:,.2f} ({pct:.1f}%)"
+                        if is_revenue
+                        else f"{val:,.1f} ({pct:.1f}%)"
+                    )
                     for val, pct in zip(sorted_att, sorted_pct)
                 ],
                 textposition="auto",
-                hovertemplate="Canal: %{y}<br>Atribuído: %{x}<br>Percentual: %{text}<extra></extra>",
+                hovertemplate="Canal: %{y}<br>Atribuído: "
+                + ("R$ %{x:,.2f}" if is_revenue else "%{x:,.1f}")
+                + "<br>Percentual: %{text}<extra></extra>",
             )
         )
         fig.update_layout(
@@ -497,7 +511,9 @@ def generate_report(
                 font=dict(family="Ubuntu, sans-serif", size=15, color="#ffffff"),
             ),
             xaxis=dict(
-                title="Conversões Atribuídas",
+                title=(
+                    "Receita Atribuída (R$)" if is_revenue else "Conversões Atribuídas"
+                ),
                 color="#C4C7CB",
                 gridcolor="rgba(255,255,255,0.05)",
             ),
@@ -856,7 +872,7 @@ def generate_report(
             </div>
 
             <!-- BIG NUMBERS -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 {% if is_revenue %}lg:grid-cols-5{% else %}lg:grid-cols-4{% endif %} gap-4">
                 <div class="glass-card p-6 flex flex-col gap-1">
                     <span class="text-xs text-dark-400 uppercase tracking-wider font-semibold">Total de Jornadas</span>
                     <span class="text-3xl font-bold text-white font-display mt-1">{{ total_journeys }}</span>
@@ -865,6 +881,12 @@ def generate_report(
                     <span class="text-xs text-dark-400 uppercase tracking-wider font-semibold text-success-400">Total de Conversões</span>
                     <span class="text-3xl font-bold text-success-400 font-display mt-1">{{ total_conversions }}</span>
                 </div>
+                {% if is_revenue %}
+                <div class="glass-card p-6 flex flex-col gap-1" style="border-top: 2px solid #FFB302;">
+                    <span class="text-xs text-dark-400 uppercase tracking-wider font-semibold text-primary-400">Receita Total Atribuída</span>
+                    <span class="text-3xl font-bold text-primary-400 font-display mt-1">R$ {{ total_revenue|round(2) }}</span>
+                </div>
+                {% endif %}
                 <div class="glass-card p-6 flex flex-col gap-1">
                     <span class="text-xs text-dark-400 uppercase tracking-wider font-semibold">Jornadas Conversoras (%)</span>
                     <span class="text-3xl font-bold text-white font-display mt-1">{{ total_conversions }} <span class="text-sm font-normal text-dark-400">({{ pct_conv|round(2) }}%)</span></span>
@@ -1183,6 +1205,8 @@ def generate_report(
         "attribution_charts": plotly_divs["attribution_charts"],
         "plotly_divs": plotly_divs,
         "markov_specific": markov_specific,
+        "is_revenue": is_revenue,
+        "total_revenue": total_revenue,
     }
 
     if markov_metadata is not None:
