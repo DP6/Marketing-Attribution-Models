@@ -34,4 +34,5 @@ include = ["mam*"]
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
 branch = "master"
+build_command = "pip install build && python -m build"
 
