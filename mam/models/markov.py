@@ -148,7 +148,7 @@ class MarkovModel(BaseModel):
 
         # Explodir canais e calcular a atribuição proporcional por jornada
         exploded = df.select(
-            ["journey_id", "channels", "has_conversion", "weight"]
+            ["journey_id", "channels", "has_conversion", "weight", "conversion_value"]
         ).explode("channels")
         exploded = exploded.with_columns(pl.col("channels").cast(pl.Utf8))
 
@@ -167,9 +167,7 @@ class MarkovModel(BaseModel):
             .alias("norm_weight")
         ).with_columns(
             (
-                pl.col("has_conversion").cast(pl.Float64)
-                * pl.col("weight")
-                * pl.col("norm_weight")
+                pl.col("conversion_value") * pl.col("weight") * pl.col("norm_weight")
             ).alias("attribution_value")
         )
 

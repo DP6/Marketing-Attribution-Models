@@ -33,9 +33,11 @@ class MAM:
         create_journey_id_based_on_conversion: bool = False,
         path_separator: str = " > ",
         verbose: bool = False,
+        conversion_value_colname: Optional[str] = None,
     ):
         self.verbose = verbose
         self.sep = path_separator
+        self.conversion_value_colname = conversion_value_colname
 
         # Conversão de Pandas para Polars sob o capô
         if isinstance(df, pd.DataFrame):
@@ -54,6 +56,7 @@ class MAM:
             occurrences_colname=occurrences_colname,
             create_journey_id_based_on_conversion=create_journey_id_based_on_conversion,
             path_separator=path_separator,
+            conversion_value_colname=conversion_value_colname,
         )
 
     def run_last_click(self) -> AttributionResult:

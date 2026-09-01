@@ -117,6 +117,48 @@ mam = MAM(
 
 ---
 
+## 💰 Atribuição Baseada em Receita (Revenue Attribution)
+
+Por padrão, a Nova MAM realiza a atribuição baseada na **quantidade de conversões** (onde cada jornada conversora tem valor constante de `1.0`). Porém, ela também suporta nativamente a atribuição baseada em **receita (valor financeiro/revenue)**.
+
+Para habilitar isso, basta passar o nome da coluna contendo os valores de receita no parâmetro `conversion_value_colname` ao inicializar a classe `MAM`:
+
+```python
+import polars as pl
+from mam.core import MAM
+
+# DataFrame com coluna de receita (revenue)
+df = pl.DataFrame({
+    "journey_id": ["j1", "j2", "j3"],
+    "journey": ["Google_Search > Meta_Ads > Direct", "Organic_Search > Email", "Direct"],
+    "conversion": [True, False, True],
+    "time_till_end": ["72.0 > 36.0 > 0.0", "120.0 > 0.0", "0.0"],
+    "revenue": [150.00, 0.0, 300.00]  # Valores financeiros reais das conversões
+})
+
+# Inicializando o orquestrador mapeando a receita
+mam = MAM(
+    df=df,
+    format_type="journey",
+    channels_colname="journey",
+    journey_with_conv_colname="conversion",
+    time_till_conv_colname="time_till_end",
+    conversion_value_colname="revenue"  # <--- Habilita atribuição por receita
+)
+
+# Ao rodar qualquer modelo, o crédito atribuído a cada canal será proporcional à receita total:
+res_linear = mam.run_linear().to_polars()
+print(res_linear)
+```
+
+### 📊 Relatórios Visuais e JSON com Suporte a Receita
+Ao ativar a atribuição por receita, o método `generate_report(...)` detecta automaticamente esse contexto e ajusta dinamicamente a exibição do dashboard:
+- **Novos Big Numbers:** Exibe um cartão adicional com a métrica de destaque **"Receita Total Atribuída"** (R$). O layout se expande automaticamente de 4 para 5 colunas.
+- **Gráficos Monetários (Plotly):** O título do eixo X muda de "Conversões" para **"Receita Atribuída (R$)"**, formatando as legendas flutuantes e os textos sobre as barras como moeda brasileira (ex: `R$ 13.101,68`).
+- **BI Export em JSON:** O arquivo bruto gerado no JSON incluirá a chave `"total_revenue"` dentro de `"metadata"`, ideal para carregar diretamente nos seus dashboards do Tableau, Power BI ou Looker Studio.
+
+---
+
 ## 🔍 Journey Analysis Toolbox (JAToolbox)
 
 A `JAToolbox` oferece ferramentas estatísticas poderosas para análise exploratória de touchpoints e caminhos de conversão, totalmente integrada com Polars (e com suporte automático a Pandas).
