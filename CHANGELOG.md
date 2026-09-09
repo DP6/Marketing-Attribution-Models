@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v2.1.0 (2026-09-09)
+
+
 ## v2.0.0 (2026-09-01)
 
 ### Bug Fixes
@@ -28,6 +31,9 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 
 - Add support for revenue-based attribution in preprocessing, core, models, and reporting
   ([`b0e7a6d`](https://github.com/DP6/Marketing-Attribution-Models/commit/b0e7a6dfd6c545b5bf2415e57424ab621c8faf68))
+
+- Adiciona suporte oficial ao Python 3.8+
+  ([`5986f9a`](https://github.com/DP6/Marketing-Attribution-Models/commit/5986f9afe55ec5fa6764ca361787e78b68fd2eb2))
 
 - Migração e reescrita arquitetural para Nova MAM (v2.0.0)
   ([`bd815ef`](https://github.com/DP6/Marketing-Attribution-Models/commit/bd815ef941880a43bb5ee6196d75977cb1e3c3b0))
