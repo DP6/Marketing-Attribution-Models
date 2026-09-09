@@ -16,7 +16,7 @@ A **Nova MAM** é uma biblioteca de alta performance para Modelagem de Atribuiç
 
 ## 🛠️ Requisitos e Instalação
 
-A biblioteca requer Python 3.12+ e as dependências listadas no `pyproject.toml`.
+A biblioteca requer Python 3.8+ e as dependências listadas no `pyproject.toml`.
 
 Para instalar em modo de desenvolvimento em seu ambiente virtual:
 

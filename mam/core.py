@@ -1,6 +1,6 @@
 import polars as pl
 import pandas as pd
-from typing import Union, Optional
+from typing import Union, Optional, List
 from .preprocessing import MAMPipeline
 from .results import AttributionResult
 from .models.heuristics import (
@@ -157,7 +157,7 @@ class MAM:
 
     def generate_report(
         self,
-        models: list[str],
+        models: List[str],
         output_html_path: str = "report.html",
         output_json_path: str = "report_raw_data.json",
         model_kwargs: dict = None,

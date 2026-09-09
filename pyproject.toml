@@ -7,9 +7,13 @@ name = "marketing_attribution_models"
 version = "2.0.0"
 description = "Nova MAM (Marketing Attribution Models) refatorada com Polars e Jatoolbox"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
