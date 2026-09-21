@@ -355,4 +355,3 @@ def test_models_revenue_attribution_format_3(format_3_revenue_df):
     # 6. Shapley
     res_shapley = mam.run_shapley(value_column="conversion_value").to_polars()
     assert abs(res_shapley["attribution"].sum() - expected_total_revenue) < 1e-5
-
