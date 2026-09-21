@@ -263,3 +263,95 @@ def test_reporting_revenue_metric(format_2_revenue_df, tmp_path):
     assert "attribution_results" in data
     assert "last_click" in data["attribution_results"]
     assert sum(data["attribution_results"]["last_click"]["attributions"]) == 450.0
+
+
+@pytest.fixture
+def format_3_revenue_df():
+    """Format 3 (Grouped Journeys / Frequencies) with a revenue column representing total faturamento."""
+    data = [
+        {
+            "journey": "direct > google_search > meta_ads",
+            "has_conversion": True,
+            "occurrences": 120,
+            "revenue": 6000.0,  # Total revenue of these 120 occurrences
+        },
+        {
+            "journey": "direct > google_search > meta_ads",
+            "has_conversion": False,
+            "occurrences": 300,
+            "revenue": 0.0,
+        },
+        {
+            "journey": "meta_ads > direct",
+            "has_conversion": False,
+            "occurrences": 450,
+            "revenue": 0.0,
+        },
+        {
+            "journey": "email > organic_search",
+            "has_conversion": True,
+            "occurrences": 80,
+            "revenue": 4000.0,  # Total revenue of these 80 occurrences
+        },
+    ]
+    return pl.DataFrame(data)
+
+
+def test_preprocessing_revenue_format_3(format_3_revenue_df):
+    """Test that Format 3 preprocessing maps and normalizes revenue by dividing by occurrences."""
+    unified_df = MAMPipeline.preprocess(
+        df=format_3_revenue_df,
+        format_type="grouped_journey",
+        channels_colname="journey",
+        journey_with_conv_colname="has_conversion",
+        occurrences_colname="occurrences",
+        conversion_value_colname="revenue",
+    )
+
+    assert "conversion_value" in unified_df.columns
+    # Check that conversion_value has been divided by occurrences
+    # row 0 has journey_id = path_0, revenue 6000.0 / occurrences 120 = 50.0
+    row_0 = unified_df.filter(pl.col("journey_id") == "path_0")
+    assert row_0["conversion_value"][0] == 50.0
+
+    # row 3 has journey_id = path_3, revenue 4000.0 / occurrences 80 = 50.0
+    row_3 = unified_df.filter(pl.col("journey_id") == "path_3")
+    assert row_3["conversion_value"][0] == 50.0
+
+
+def test_models_revenue_attribution_format_3(format_3_revenue_df):
+    """Test that all models correctly attribute and sum total revenue under Format 3."""
+    mam = MAM(
+        df=format_3_revenue_df,
+        format_type="grouped_journey",
+        channels_colname="journey",
+        journey_with_conv_colname="has_conversion",
+        occurrences_colname="occurrences",
+        conversion_value_colname="revenue",
+    )
+
+    expected_total_revenue = 10000.0
+
+    # 1. Last Click
+    res_last = mam.run_last_click().to_polars()
+    assert abs(res_last["attribution"].sum() - expected_total_revenue) < 1e-5
+
+    # 2. First Click
+    res_first = mam.run_first_click().to_polars()
+    assert abs(res_first["attribution"].sum() - expected_total_revenue) < 1e-5
+
+    # 3. Linear
+    res_linear = mam.run_linear().to_polars()
+    assert abs(res_linear["attribution"].sum() - expected_total_revenue) < 1e-5
+
+    # 4. Position Based
+    res_pb = mam.run_position_based().to_polars()
+    assert abs(res_pb["attribution"].sum() - expected_total_revenue) < 1e-5
+
+    # 5. Markov
+    res_markov = mam.run_markov().to_polars()
+    assert abs(res_markov["attribution"].sum() - expected_total_revenue) < 1e-5
+
+    # 6. Shapley
+    res_shapley = mam.run_shapley(value_column="conversion_value").to_polars()
+    assert abs(res_shapley["attribution"].sum() - expected_total_revenue) < 1e-5

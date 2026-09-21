@@ -170,10 +170,10 @@ def pipeline_format_3_to_unified(
 
     if conversion_value_col:
         col_exprs.append(
-            pl.col(conversion_value_col)
-            .cast(pl.Float64)
-            .fill_null(0.0)
-            .alias("conversion_value")
+            (
+                pl.col(conversion_value_col).cast(pl.Float64).fill_null(0.0)
+                / pl.col(occurrences_col).cast(pl.Float64)
+            ).alias("conversion_value")
         )
     else:
         col_exprs.append(
