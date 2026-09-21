@@ -151,6 +151,39 @@ res_linear = mam.run_linear().to_polars()
 print(res_linear)
 ```
 
+### 🔄 Atribuição por Receita no Formato de Jornadas Agrupadas (Format 3)
+
+No **Formato 3 (Jornadas Agrupadas / Frequências)**, cada linha representa um conjunto de jornadas idênticas consolidado por uma coluna de ocorrências (ex: `occurrences`). 
+
+Se você fornecer a coluna de receita representando o **faturamento total acumulado do grupo**, a MAM 2.0 realiza uma normalização inteligente de forma totalmente transparente durante a ingestão: a receita total é dividida pelo número de ocorrências para obter o valor unitário internamente. Quando os modelos calculam os créditos finais ou geram os relatórios, a receita é recomposta de forma exata e perfeita.
+
+```python
+import polars as pl
+from mam.core import MAM
+
+# DataFrame agrupado no Formato 3 com receita total do grupo
+df_grouped = pl.DataFrame({
+    "journey": ["Direct > Google_Search > Meta_Ads", "Direct > Google_Search > Meta_Ads", "Email > Organic_Search"],
+    "has_conversion": [True, False, True],
+    "occurrences": [120, 300, 80],
+    "revenue": [6000.00, 0.00, 4000.00]  # Receita total acumulada daquele grupo de caminhos
+})
+
+# Inicializando mapeando a receita no Formato 3
+mam = MAM(
+    df=df_grouped,
+    format_type="grouped_journey",
+    channels_colname="journey",
+    journey_with_conv_colname="has_conversion",
+    occurrences_colname="occurrences",
+    conversion_value_colname="revenue"
+)
+
+# Os resultados de atribuição somarão exatamente a receita real de R$ 10.000,00
+res_last = mam.run_last_click().to_polars()
+print(res_last)
+```
+
 ### 📊 Relatórios Visuais e JSON com Suporte a Receita
 Ao ativar a atribuição por receita, o método `generate_report(...)` detecta automaticamente esse contexto e ajusta dinamicamente a exibição do dashboard:
 - **Novos Big Numbers:** Exibe um cartão adicional com a métrica de destaque **"Receita Total Atribuída"** (R$). O layout se expande automaticamente de 4 para 5 colunas.
