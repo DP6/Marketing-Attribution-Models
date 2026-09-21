@@ -1,6 +1,25 @@
 # CHANGELOG
 
 
+## v2.1.1 (2026-09-21)
+
+### Bug Fixes
+
+- Add revenue attribution support for Format 3 (grouped journeys)
+  ([`8248191`](https://github.com/DP6/Marketing-Attribution-Models/commit/8248191e450b8501a48d0a09d12f86aa8ec32103))
+
+- Normalize revenue in pipeline_format_3_to_unified by dividing by occurrences. - Ensure other
+  models and reporting handle Format 3 revenue transparently without double-scaling. - Add robust
+  tests in tests/test_revenue_attribution.py covering Format 3 revenue preprocessing and attribution
+  calculations. - Update README.md with detailed explanations and code examples for Format 3 revenue
+  attribution.
+
+### Code Style
+
+- Apply black formatter to fix CI lint error
+  ([`7bc3d11`](https://github.com/DP6/Marketing-Attribution-Models/commit/7bc3d115475d7adeabeb49f5e3d587525dd6b7d4))
+
+
 ## v2.1.0 (2026-09-09)
 
 
