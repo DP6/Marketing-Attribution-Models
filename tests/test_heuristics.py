@@ -113,6 +113,55 @@ def test_position_based(format_2_data):
     assert abs(res_dict.get("B") - 0.2) < 1e-5
     assert abs(res_dict.get("C") - 0.9) < 1e-5
 
+    # Saída bruta: uma linha por touchpoint, sem a lista de tempos da jornada
+    raw = result.to_raw_polars()
+    assert raw["channels"].to_list() == ["A", "B", "C", "A", "C"]
+    assert "time_till_conv" not in raw.columns
+
+
+def test_position_based_time_list_not_matching_path():
+    # Tempos com tamanho diferente do caminho, ou ausentes, não impedem o cálculo
+    df = pl.DataFrame(
+        {
+            "journey_id": ["j1", "j2"],
+            "journey": ["A > B > C", "A > C"],
+            "conversion": [True, True],
+            "time_till_end": ["7200 > 0", None],
+        }
+    )
+    mam_instance = MAM(
+        df=df,
+        format_type="journey",
+        channels_colname="journey",
+        journey_with_conv_colname="conversion",
+        time_till_conv_colname="time_till_end",
+    )
+    agg_df = mam_instance.run_position_based().to_polars()
+    res_dict = dict(zip(agg_df["channels"], agg_df["attribution"]))
+    assert abs(res_dict.get("A") - 0.9) < 1e-5
+    assert abs(res_dict.get("B") - 0.2) < 1e-5
+    assert abs(res_dict.get("C") - 0.9) < 1e-5
+
+
+def test_position_based_without_time_column():
+    # Chamada direta ao modelo com um DataFrame sem time_till_conv
+    from mam.models.heuristics import PositionBasedModel
+
+    df = pl.DataFrame(
+        {
+            "journey_id": ["a", "b"],
+            "channels": [["A", "B", "C"], ["A"]],
+            "has_conversion": [True, True],
+            "weight": [1, 1],
+            "conversion_value": [1.0, 1.0],
+        }
+    )
+    agg_df = PositionBasedModel().get_aggregated_results(df)
+    res_dict = dict(zip(agg_df["channels"], agg_df["attribution"]))
+    assert abs(res_dict.get("A") - 1.4) < 1e-5
+    assert abs(res_dict.get("B") - 0.2) < 1e-5
+    assert abs(res_dict.get("C") - 0.4) < 1e-5
+
 
 def test_time_decay(format_1_data):
     mam_instance = MAM(

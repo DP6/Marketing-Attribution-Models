@@ -2,6 +2,7 @@ import polars as pl
 import pandas as pd
 from mam.core import MAM
 from mam.results import AttributionResult
+from mam.models.markov import MarkovModel
 
 
 def test_markov_format_2(small_format_2_df):
@@ -84,3 +85,47 @@ def test_markov_transition_to_same_state(small_format_3_df):
         result_same.to_polars()["attribution"].sum()
         == result_no_same.to_polars()["attribution"].sum()
     )
+
+
+def test_markov_transition_counts_format_3():
+    # Contagens ponderadas por occurrences, sem auto-transições (Search > Search)
+    df = pl.DataFrame(
+        {
+            "journey": [
+                "Search > Direct",
+                "Search > Direct",
+                "Social > Search > Search > Direct",
+                "Display",
+                "Display > Social",
+            ],
+            "has_conversion": [True, False, True, True, False],
+            "occurrences": [3, 7, 2, 4, 5],
+        }
+    )
+    mam_instance = MAM(
+        df=df,
+        format_type="grouped_journey",
+        channels_colname="journey",
+        journey_with_conv_colname="has_conversion",
+        occurrences_colname="occurrences",
+    )
+    matrix, _, names = MarkovModel()._build_transition_matrix(mam_instance.unified_df)
+    counts = pd.DataFrame(matrix, index=names, columns=names)
+
+    expected = {
+        ("(inicio)", "Display"): 9,
+        ("(inicio)", "Search"): 10,
+        ("(inicio)", "Social"): 2,
+        ("Direct", "(null)"): 7,
+        ("Direct", "(conversion)"): 5,
+        ("Display", "Social"): 5,
+        ("Display", "(conversion)"): 4,
+        ("Search", "Direct"): 12,
+        ("Social", "Search"): 2,
+        ("Social", "(null)"): 5,
+        ("(null)", "(null)"): 1,
+        ("(conversion)", "(conversion)"): 1,
+    }
+    for (orig, dest), value in expected.items():
+        assert counts.loc[orig, dest] == value
+    assert counts.values.sum() == sum(expected.values())

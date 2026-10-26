@@ -53,7 +53,8 @@ class LinearModel(BaseModel):
     def get_aggregated_results(self, df: pl.DataFrame) -> pl.DataFrame:
         calc_df = self.calculate(df)
         return (
-            calc_df.explode("channels")
+            calc_df.select(["channels", "split_value"])
+            .explode("channels")
             .group_by("channels")
             .agg(pl.col("split_value").sum().alias("attribution"))
             .sort("attribution", descending=True)
@@ -64,8 +65,11 @@ class PositionBasedModel(BaseModel):
     def calculate(self, df: pl.DataFrame) -> pl.DataFrame:
         # Atribui 40% ao primeiro e último, 20% distribuídos aos intermediários
 
+        # time_till_conv não é usado aqui: repetir a lista inteira em cada
+        # touchpoint faz a memória crescer com o quadrado da jornada.
         exploded = (
-            df.with_columns(pl.col("channels").list.len().alias("journey_len"))
+            df.select(pl.exclude("time_till_conv"))
+            .with_columns(pl.col("channels").list.len().alias("journey_len"))
             .explode("channels")
             .with_columns(pl.int_range(0, pl.len()).over("journey_id").alias("pos_idx"))
         )
