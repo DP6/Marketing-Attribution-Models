@@ -40,8 +40,10 @@ import io
 import json
 import zipfile
 
+import pandas as pd
 import polars as pl
 import pyarrow.parquet as pq
+import pytest
 
 ALL = [
     "last_click",
@@ -160,11 +162,19 @@ def test_on_disk_schemas(mam_f2_revenue, tmp_path):
     assert all(m["status"] == "ok" for m in mf["models"])
 
 
-# ---- load ----
-import pandas as pd
-import pytest
+def test_manifest_records_channels_dtype(mam_f2, tmp_path):
+    manifest = mam_f2.save(
+        str(tmp_path / "a.mam"), models=["last_click", "markov", "shapley"]
+    )
+    by = {m["name"]: m["channels_dtype"] for m in manifest["models"]}
+    assert by == {
+        "last_click": "categorical",
+        "markov": "string",
+        "shapley": "string",
+    }
 
-from mam import MAM
+
+# ---- load ----
 
 
 def _rewrite_manifest(path, patch):

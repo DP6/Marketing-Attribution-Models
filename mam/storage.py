@@ -115,7 +115,20 @@ def save_mam(
             continue
         mam.results[name] = result
         params = dict(result.metadata.get("kwargs", kwargs))
-        model_entries.append({"name": name, "status": "ok", "params": params})
+        agg = result.to_polars()
+        channels_dtype = (
+            "categorical"
+            if agg.schema["channels"] in (pl.Categorical, pl.Enum)
+            else "string"
+        )
+        model_entries.append(
+            {
+                "name": name,
+                "status": "ok",
+                "params": params,
+                "channels_dtype": channels_dtype,
+            }
+        )
         attribution_frames.append(
             result.to_polars().select(
                 pl.lit(name).alias("model"),
@@ -176,15 +189,6 @@ def save_mam(
     return manifest
 
 
-_CATEGORICAL_MODELS = (
-    "last_click",
-    "first_click",
-    "linear",
-    "position_based",
-    "time_decay",
-)
-
-
 def _read_member(zf: zipfile.ZipFile, name: str) -> pl.DataFrame:
     return pl.read_parquet(io.BytesIO(zf.read(name)))
 
@@ -238,7 +242,7 @@ def load_mam(path: str) -> "MAM":
             agg = attribution.filter(pl.col("model") == name).select(
                 pl.col("channel").alias("channels"), "attribution"
             )
-            if name in _CATEGORICAL_MODELS:
+            if entry.get("channels_dtype") == "categorical":
                 agg = agg.with_columns(pl.col("channels").cast(pl.Categorical))
             metadata = {"model_name": name, "kwargs": params}
             if name == "markov":
