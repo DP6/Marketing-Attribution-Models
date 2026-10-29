@@ -1,0 +1,175 @@
+"""Persistence of a MAM session to the `.mam` file (ZIP of Parquet + manifest.json)."""
+
+import io
+import json
+import math
+import os
+import zipfile
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Dict, List, Optional
+
+import pandas as pd
+import polars as pl
+
+if TYPE_CHECKING:
+    from .core import MAM
+
+FORMAT_VERSION = 1
+
+JOURNEYS = "input/journeys.parquet"
+ATTRIBUTION = "results/attribution.parquet"
+TRANSITION_MATRIX = "markov/transition_matrix.parquet"
+REMOVAL_EFFECT = "markov/removal_effect.parquet"
+CONV_TABLE = "shapley/conv_table.parquet"
+MANIFEST = "manifest.json"
+
+MODEL_NAMES = (
+    "last_click",
+    "first_click",
+    "linear",
+    "position_based",
+    "time_decay",
+    "markov",
+    "shapley",
+)
+
+
+def _mam_version() -> str:
+    from . import __version__
+
+    return __version__
+
+
+def _to_parquet_bytes(df: pl.DataFrame) -> bytes:
+    buf = io.BytesIO()
+    df.write_parquet(buf, compression="snappy")
+    return buf.getvalue()
+
+
+def _transition_matrix_long(tm: pd.DataFrame) -> pl.DataFrame:
+    long = tm.stack()
+    return pl.DataFrame(
+        {
+            "from_state": [str(i) for i, _ in long.index],
+            "to_state": [str(j) for _, j in long.index],
+            "probability": long.to_numpy(dtype="float64"),
+        }
+    )
+
+
+def _removal_effect(re: pd.DataFrame) -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "channel": [str(c) for c in re.index],
+            "removal_effect": re["removal_effect"].to_numpy(dtype="float64"),
+        }
+    )
+
+
+def _conv_table(ct: pl.DataFrame, params: dict) -> pl.DataFrame:
+    col = f"attribution_shapley_size{params['max_size']}_{params['value_column']}_algorithmic"
+    return ct.rename({col: "attribution"})
+
+
+def _check_finite(obj) -> None:
+    if isinstance(obj, float) and not math.isfinite(obj):
+        raise ValueError("manifest must not contain NaN/inf")
+    if isinstance(obj, dict):
+        for v in obj.values():
+            _check_finite(v)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            _check_finite(v)
+
+
+def save_mam(
+    mam: "MAM",
+    path: str,
+    models: List[str],
+    model_kwargs: Optional[Dict[str, dict]] = None,
+) -> dict:
+    """Runs the requested models, stores successful results in `mam.results`,
+    writes the `.mam` file atomically and returns the manifest."""
+    model_kwargs = model_kwargs or {}
+    unknown = [m for m in models if m not in MODEL_NAMES]
+    if unknown:
+        raise ValueError(f"Unknown model(s): {unknown}. Valid: {list(MODEL_NAMES)}")
+
+    members: Dict[str, pl.DataFrame] = {
+        JOURNEYS: mam.unified_df.with_columns(
+            pl.col("channels").cast(pl.List(pl.String))
+        )
+    }
+    model_entries = []
+    attribution_frames = []
+
+    for name in models:
+        kwargs = dict(model_kwargs.get(name, {}))
+        try:
+            result = getattr(mam, f"run_{name}")(**kwargs)
+        except Exception as e:  # recorded in the manifest, never aborts the save
+            model_entries.append(
+                {"name": name, "status": "error", "params": kwargs, "error": str(e)}
+            )
+            continue
+        mam.results[name] = result
+        params = dict(result.metadata.get("kwargs", kwargs))
+        model_entries.append({"name": name, "status": "ok", "params": params})
+        attribution_frames.append(
+            result.to_polars().select(
+                pl.lit(name).alias("model"),
+                pl.col("channels").cast(pl.String).alias("channel"),
+                pl.col("attribution").cast(pl.Float64),
+            )
+        )
+        if name == "markov":
+            members[TRANSITION_MATRIX] = _transition_matrix_long(
+                result.metadata["transition_matrix"]
+            )
+            members[REMOVAL_EFFECT] = _removal_effect(result.metadata["removal_effect"])
+        elif name == "shapley":
+            members[CONV_TABLE] = _conv_table(result.metadata["conv_table"], params)
+
+    if attribution_frames:
+        members[ATTRIBUTION] = pl.concat(attribution_frames)
+    else:
+        members[ATTRIBUTION] = pl.DataFrame(
+            schema={"model": pl.String, "channel": pl.String, "attribution": pl.Float64}
+        )
+
+    manifest = {
+        "format": "mam",
+        "format_version": FORMAT_VERSION,
+        "mam_version": _mam_version(),
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "input": {
+            "format_type": mam.format_type,
+            "path_separator": mam.sep,
+            "conversion_value_column": mam.conversion_value_colname,
+            "create_journey_id_based_on_conversion": bool(
+                mam.create_journey_id_based_on_conversion
+            ),
+        },
+        "models": model_entries,
+        "files": {name: {"rows": df.height} for name, df in members.items()},
+    }
+    _check_finite(manifest)
+
+    tmp = path + ".tmp"
+    try:
+        with zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_STORED) as zf:
+            zf.writestr(
+                MANIFEST,
+                json.dumps(manifest, indent=2, allow_nan=False),
+                compress_type=zipfile.ZIP_STORED,
+            )
+            for name, df in members.items():
+                zf.writestr(
+                    name, _to_parquet_bytes(df), compress_type=zipfile.ZIP_STORED
+                )
+        os.replace(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        raise
+    return manifest

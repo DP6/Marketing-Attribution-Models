@@ -221,6 +221,21 @@ class MAM:
             model_kwargs=model_kwargs,
         )
 
+    def save(
+        self,
+        path: str,
+        models: List[str],
+        model_kwargs: Optional[Dict[str, dict]] = None,
+    ) -> dict:
+        """
+        Runs the given models and writes a `.mam` file (ZIP of Parquet files plus
+        manifest.json). Returns the manifest. Models that fail are recorded in
+        the manifest with status "error" and contribute no rows.
+        """
+        from .storage import save_mam
+
+        return save_mam(self, path, models, model_kwargs)
+
     @property
     def jatoolbox(self):
         """

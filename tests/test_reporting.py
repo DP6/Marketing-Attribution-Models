@@ -5,34 +5,6 @@ import polars as pl
 from mam.core import MAM
 
 
-@pytest.fixture
-def format_2_data():
-    return pl.DataFrame(
-        {
-            "journey_id": ["j1", "j2", "j3", "j4"],
-            "journey": [
-                "Direct > Google_Search > Meta_Ads",
-                "Direct > Meta_Ads",
-                "Google_Search > Direct",
-                "Meta_Ads",
-            ],
-            "conversion": [True, True, False, False],
-            "time_till_end": ["10 > 5 > 0", "20 > 0", "15 > 0", "0"],
-        }
-    )
-
-
-@pytest.fixture
-def format_3_data():
-    return pl.DataFrame(
-        {
-            "journey": ["Direct > Google_Search", "Meta_Ads > Direct", "Google_Search"],
-            "conversion": [True, False, False],
-            "occurrences": [10, 20, 5],
-        }
-    )
-
-
 def test_generate_report_with_time(format_2_data, tmp_path):
     # Setup filenames
     output_html = os.path.join(tmp_path, "report.html")
