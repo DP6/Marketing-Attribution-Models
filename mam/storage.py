@@ -6,7 +6,7 @@ import math
 import os
 import zipfile
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -85,16 +85,19 @@ def _check_finite(obj) -> None:
 
 def save_mam(
     mam: "MAM",
-    path: str,
+    path: Union[str, "os.PathLike[str]"],
     models: List[str],
     model_kwargs: Optional[Dict[str, dict]] = None,
 ) -> dict:
     """Runs the requested models, stores successful results in `mam.results`,
     writes the `.mam` file atomically and returns the manifest."""
+    path = os.fspath(path)
     model_kwargs = model_kwargs or {}
     unknown = [m for m in models if m not in MODEL_NAMES]
     if unknown:
         raise ValueError(f"Unknown model(s): {unknown}. Valid: {list(MODEL_NAMES)}")
+    if len(set(models)) != len(models):
+        raise ValueError(f"Duplicate model(s) in `models`: {models}")
 
     members: Dict[str, pl.DataFrame] = {
         JOURNEYS: mam.unified_df.with_columns(
@@ -109,6 +112,9 @@ def save_mam(
         try:
             result = getattr(mam, f"run_{name}")(**kwargs)
         except Exception as e:  # recorded in the manifest, never aborts the save
+            mam.results.pop(
+                name, None
+            )  # never keep a stale result from an earlier save
             model_entries.append(
                 {"name": name, "status": "error", "params": kwargs, "error": str(e)}
             )
@@ -130,7 +136,7 @@ def save_mam(
             }
         )
         attribution_frames.append(
-            result.to_polars().select(
+            agg.select(
                 pl.lit(name).alias("model"),
                 pl.col("channels").cast(pl.String).alias("channel"),
                 pl.col("attribution").cast(pl.Float64),

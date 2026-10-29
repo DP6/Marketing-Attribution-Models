@@ -330,7 +330,7 @@ O `.mam` é um ZIP (sem compressão) com arquivos Parquet e um `manifest.json`:
 
 | Membro | Conteúdo |
 |---|---|
-| `manifest.json` | `format`, `format_version` (atualmente `1`), `mam_version`, `created_at`, parâmetros de entrada (`input`), lista de `models` (nome, `status`, `params`, `channels_dtype` e `error` quando falha) e contagem de linhas por membro (`files`) |
+| `manifest.json` | `format`, `format_version` (atualmente `1`), `mam_version`, `created_at`, parâmetros de entrada (`input`), lista de `models` (nome, `status`, `params`; `channels_dtype` apenas nas entradas `ok` e `error` apenas nas entradas `error`) e contagem de linhas por membro (`files`) |
 | `input/journeys.parquet` | DataFrame unificado de jornadas (canais como lista de strings) |
 | `results/attribution.parquet` | Atribuição de todos os modelos em formato longo: `model`, `channel`, `attribution` |
 | `markov/transition_matrix.parquet` | Matriz de transição em formato longo: `from_state`, `to_state`, `probability` (apenas se `markov` foi salvo) |
@@ -339,9 +339,11 @@ O `.mam` é um ZIP (sem compressão) com arquivos Parquet e um `manifest.json`:
 
 ### Compatibilidade
 
+O Polars grava tipos Arrow `large_string`/`large_list`; leitores que validam o schema devem aceitar tanto `string`/`large_string` quanto `list`/`large_list`.
+
 Adicionar colunas, grupos ou modelos é compatível; renomear ou remover sobe o `format_version`. Arquivos com `format_version` diferente do suportado são recusados pelo `MAM.load` com um erro explícito.
 
-> **Nota:** os resultados carregados não têm o resultado granular por jornada (`raw_df=None`), portanto `to_raw_polars()` retorna `None`. Apenas a agregação por canal e os metadados do modelo são restaurados.
+> **Nota:** os resultados carregados não têm o resultado granular por jornada (`raw_df=None`), portanto `to_raw_polars()` retorna `None`. Apenas a atribuição agregada por canal, os parâmetros do modelo (`kwargs`) e os artefatos do modelo (matriz de transição e efeito de remoção do Markov, `conv_table` do Shapley) são restaurados.
 
 ---
 

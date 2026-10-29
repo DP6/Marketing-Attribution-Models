@@ -1,4 +1,15 @@
+import io
+import json
+import zipfile
+from pathlib import Path
+
+import pandas as pd
+import polars as pl
+import pyarrow.parquet as pq
+import pytest
+
 from mam import MAM
+from mam.storage import MODEL_NAMES
 
 
 def test_mam_keeps_normalized_input_config(small_format_1_df):
@@ -36,24 +47,7 @@ def test_from_unified_skips_preprocessing(small_format_1_df):
 
 
 # ---- save ----
-import io
-import json
-import zipfile
-
-import pandas as pd
-import polars as pl
-import pyarrow.parquet as pq
-import pytest
-
-ALL = [
-    "last_click",
-    "first_click",
-    "linear",
-    "position_based",
-    "time_decay",
-    "markov",
-    "shapley",
-]
+ALL = list(MODEL_NAMES)
 
 
 def test_save_writes_expected_members_stored_and_snappy(mam_f2, tmp_path):
@@ -128,9 +122,11 @@ def test_save_overwrites_via_tmp_and_leaves_no_tmp(mam_f2, tmp_path):
     assert zipfile.is_zipfile(p) and not (tmp_path / "a.mam.tmp").exists()
 
 
-def test_on_disk_schemas(mam_f2_revenue, tmp_path):
+@pytest.mark.parametrize("fixture", ["mam_f1", "mam_f2", "mam_f3", "mam_f2_revenue"])
+def test_on_disk_schemas(fixture, request, tmp_path):
+    m = request.getfixturevalue(fixture)
     p = tmp_path / "a.mam"
-    mam_f2_revenue.save(str(p), models=["markov", "shapley"])
+    m.save(str(p), models=["markov", "shapley"])
     with zipfile.ZipFile(p) as z:
         rd = lambda n: pl.read_parquet(z.read(n))
         j = rd("input/journeys.parquet")
@@ -146,7 +142,8 @@ def test_on_disk_schemas(mam_f2_revenue, tmp_path):
         )
         tm = rd("markov/transition_matrix.parquet")
         assert tm.columns == ["from_state", "to_state", "probability"]
-        assert tm.height == 36
+        n_states = tm["from_state"].n_unique()
+        assert tm.height == n_states**2
         assert {"(inicio)", "(null)", "(conversion)"} <= set(tm["from_state"])
         assert (tm["probability"] == 0).any()
         assert rd("markov/removal_effect.parquet").columns == [
@@ -157,8 +154,8 @@ def test_on_disk_schemas(mam_f2_revenue, tmp_path):
         assert ct.columns[-1] == "attribution"
         assert ct.schema["attribution"] == pl.List(pl.Float64)
         mf = json.loads(z.read("manifest.json"))
-    assert mf["input"]["conversion_value_column"] == "revenue"
-    assert mf["files"]["markov/transition_matrix.parquet"]["rows"] == 36
+    assert mf["input"]["conversion_value_column"] == m.conversion_value_colname
+    assert mf["files"]["markov/transition_matrix.parquet"]["rows"] == n_states**2
     assert all(m["status"] == "ok" for m in mf["models"])
 
 
@@ -252,8 +249,39 @@ def test_non_ascii_channels_round_trip(tmp_path):
 def test_readable_without_mam(mam_f2, tmp_path):
     mam_f2.save(str(tmp_path / "a.mam"), models=["linear"])
     with zipfile.ZipFile(tmp_path / "a.mam") as z:
-        pdf = pd.read_parquet(io.BytesIO(z.read("input/journeys.parquet")))
+        raw = z.read("input/journeys.parquet")
+    pdf = pd.read_parquet(io.BytesIO(raw))
     assert all(isinstance(c, str) for c in pdf["channels"].iloc[0])
+    channels = pq.read_table(io.BytesIO(raw)).column("channels").to_pylist()
+    assert all(isinstance(ch, list) for ch in channels)
+    assert all(isinstance(c, str) for ch in channels for c in ch)
+
+
+def test_duplicate_models_rejected(mam_f2, tmp_path):
+    p = tmp_path / "a.mam"
+    with pytest.raises(ValueError, match="Duplicate"):
+        mam_f2.save(str(p), models=["linear", "linear"])
+    assert not p.exists()
+
+
+def test_save_accepts_pathlib_path(mam_f2, tmp_path):
+    p = tmp_path / "a.mam"
+    mam_f2.save(p, models=["linear"])
+    assert zipfile.is_zipfile(p) and not (tmp_path / "a.mam.tmp").exists()
+    assert isinstance(p, Path)
+
+
+def test_failed_rerun_clears_stale_result(mam_f2, tmp_path, monkeypatch):
+    mam_f2.save(str(tmp_path / "a.mam"), models=["linear"])
+    assert "linear" in mam_f2.results
+
+    def boom(**kwargs):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(mam_f2, "run_linear", boom)
+    manifest = mam_f2.save(str(tmp_path / "b.mam"), models=["linear"])
+    assert manifest["models"][0]["status"] == "error"
+    assert "linear" not in mam_f2.results
 
 
 def test_load_can_run_another_model(mam_f2, tmp_path):
