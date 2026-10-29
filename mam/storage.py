@@ -89,12 +89,7 @@ def save_mam(
     models: List[str],
     model_kwargs: Optional[Dict[str, dict]] = None,
 ) -> dict:
-    """
-    Run the requested models and save the session to a `.mam` file.
-
-    Successful results are stored in `mam.results`; the file is written
-    atomically and the manifest is returned.
-    """
+    """Run the models, store successes in `mam.results`, write the file atomically."""
     path = os.fspath(path)
     model_kwargs = model_kwargs or {}
     unknown = [m for m in models if m not in MODEL_NAMES]
@@ -204,12 +199,7 @@ def _read_member(zf: zipfile.ZipFile, name: str) -> pl.DataFrame:
 
 
 def _transition_matrix_from_long(long: pl.DataFrame):
-    """
-    Rebuild the square transition matrix from its long form.
-
-    Returns (pandas DataFrame, state names) in the original state order:
-    `(inicio)`, channels sorted, `(null)`, `(conversion)`.
-    """
+    """Rebuild the square matrix in MarkovModel state order."""
     absorbing = {"(inicio)", "(null)", "(conversion)"}
     states = set(long["from_state"].unique().to_list())
     channels = sorted(states - absorbing)
