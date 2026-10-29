@@ -158,3 +158,110 @@ def test_on_disk_schemas(mam_f2_revenue, tmp_path):
     assert mf["input"]["conversion_value_column"] == "revenue"
     assert mf["files"]["markov/transition_matrix.parquet"]["rows"] == 36
     assert all(m["status"] == "ok" for m in mf["models"])
+
+
+# ---- load ----
+import pandas as pd
+import pytest
+
+from mam import MAM
+
+
+def _rewrite_manifest(path, patch):
+    with zipfile.ZipFile(path) as z:
+        members = {n: z.read(n) for n in z.namelist()}
+    manifest = json.loads(members["manifest.json"])
+    manifest.update(patch)
+    members["manifest.json"] = json.dumps(manifest).encode()
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_STORED) as z:
+        for n, b in members.items():
+            z.writestr(n, b)
+
+
+@pytest.mark.parametrize("builder", ["f1", "f2", "f3", "f2_revenue"])
+def test_round_trip(builder, request, tmp_path):
+    m = request.getfixturevalue(f"mam_{builder}")
+    models = ["last_click", "linear", "markov", "shapley"] + (
+        [] if builder == "f3" else ["time_decay"]
+    )
+    m.save(str(tmp_path / "x.mam"), models=models)
+    loaded = MAM.load(str(tmp_path / "x.mam"))
+    assert loaded.unified_df.sort("journey_id").equals(m.unified_df.sort("journey_id"))
+    assert loaded.format_type == m.format_type and loaded.sep == m.sep
+    assert loaded.conversion_value_colname == m.conversion_value_colname
+    for name in models:
+        assert (
+            loaded.results[name]
+            .to_polars()
+            .sort("channels")
+            .equals(m.results[name].to_polars().sort("channels"))
+        )
+        assert loaded.results[name].metadata["model_name"] == name
+    pd.testing.assert_frame_equal(
+        loaded.results["markov"].metadata["transition_matrix"],
+        m.results["markov"].metadata["transition_matrix"],
+    )
+    pd.testing.assert_frame_equal(
+        loaded.results["markov"].metadata["removal_effect"],
+        m.results["markov"].metadata["removal_effect"],
+    )
+    assert (
+        loaded.results["markov"].metadata["channels_names"]
+        == m.results["markov"].metadata["channels_names"]
+    )
+    assert (
+        loaded.results["shapley"]
+        .metadata["conv_table"]
+        .equals(m.results["shapley"].metadata["conv_table"])
+    )
+
+
+def test_grouped_journey_null_times_survive(mam_f3, tmp_path):
+    mam_f3.save(str(tmp_path / "g.mam"), models=["last_click"])
+    loaded = MAM.load(str(tmp_path / "g.mam"))
+    assert loaded.unified_df["time_till_conv"].explode().is_null().all()
+
+
+def test_non_ascii_channels_round_trip(tmp_path):
+    df = pl.DataFrame(
+        {
+            "journey_id": ["a"],
+            "journey": ["Ação_Email > Mídia_Paga"],
+            "conversion": [True],
+            "time_till_end": ["1 > 0"],
+        }
+    )
+    m = MAM(
+        df, "journey", "journey", "conversion", time_till_conv_colname="time_till_end"
+    )
+    m.save(str(tmp_path / "u.mam"), models=["linear"])
+    loaded = MAM.load(str(tmp_path / "u.mam"))
+    assert loaded.unified_df["channels"].to_list() == [["Ação_Email", "Mídia_Paga"]]
+
+
+def test_readable_without_mam(mam_f2, tmp_path):
+    mam_f2.save(str(tmp_path / "a.mam"), models=["linear"])
+    with zipfile.ZipFile(tmp_path / "a.mam") as z:
+        pdf = pd.read_parquet(io.BytesIO(z.read("input/journeys.parquet")))
+    assert all(isinstance(c, str) for c in pdf["channels"].iloc[0])
+
+
+def test_load_can_run_another_model(mam_f2, tmp_path):
+    mam_f2.save(str(tmp_path / "a.mam"), models=["linear"])
+    loaded = MAM.load(str(tmp_path / "a.mam"))
+    assert loaded.run_first_click().to_polars().height > 0
+
+
+def test_load_skips_failed_models(mam_f3, tmp_path):
+    mam_f3.save(str(tmp_path / "g.mam"), models=["last_click", "time_decay"])
+    loaded = MAM.load(str(tmp_path / "g.mam"))
+    assert set(loaded.results) == {"last_click"}
+
+
+@pytest.mark.parametrize("patch", [{"format": "other"}, {"format_version": 2}])
+def test_rejects_unknown_format(mam_f2, tmp_path, patch):
+    p = tmp_path / "a.mam"
+    mam_f2.save(str(p), models=["linear"])
+    _rewrite_manifest(p, patch)
+    with pytest.raises(ValueError):
+        MAM.load(str(p))

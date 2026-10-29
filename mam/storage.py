@@ -8,6 +8,7 @@ import zipfile
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 import polars as pl
 
@@ -173,3 +174,88 @@ def save_mam(
             os.remove(tmp)
         raise
     return manifest
+
+
+_CATEGORICAL_MODELS = (
+    "last_click",
+    "first_click",
+    "linear",
+    "position_based",
+    "time_decay",
+)
+
+
+def _read_member(zf: zipfile.ZipFile, name: str) -> pl.DataFrame:
+    return pl.read_parquet(io.BytesIO(zf.read(name)))
+
+
+def _transition_matrix_from_long(long: pl.DataFrame):
+    """Returns (square pandas DataFrame, state names) in the original state order:
+    `(inicio)`, channels sorted, `(null)`, `(conversion)`."""
+    absorbing = {"(inicio)", "(null)", "(conversion)"}
+    states = set(long["from_state"].unique().to_list())
+    channels = sorted(states - absorbing)
+    names = ["(inicio)"] + channels + ["(null)", "(conversion)"]
+    idx = {s: i for i, s in enumerate(names)}
+    matrix = np.zeros((len(names), len(names)), dtype=float)
+    for frm, to, p in long.iter_rows():
+        matrix[idx[frm], idx[to]] = p
+    return pd.DataFrame(matrix, columns=names, index=names), names
+
+
+def load_mam(path: str) -> "MAM":
+    """Reads a `.mam` file written by `save_mam` back into a MAM."""
+    from .core import MAM
+    from .results import AttributionResult
+
+    with zipfile.ZipFile(path) as zf:
+        manifest = json.loads(zf.read(MANIFEST))
+        if manifest.get("format") != "mam":
+            raise ValueError(f"Not a .mam file: format={manifest.get('format')!r}")
+        if manifest.get("format_version") != FORMAT_VERSION:
+            raise ValueError(
+                f"Unsupported .mam format_version {manifest.get('format_version')!r}; "
+                f"this library reads version {FORMAT_VERSION}"
+            )
+
+        inp = manifest["input"]
+        journeys = _read_member(zf, JOURNEYS).with_columns(
+            pl.col("channels").cast(pl.List(pl.Categorical))
+        )
+        mam = MAM._from_unified(
+            journeys,
+            inp["format_type"],
+            inp["path_separator"],
+            inp["conversion_value_column"],
+            inp["create_journey_id_based_on_conversion"],
+        )
+
+        attribution = _read_member(zf, ATTRIBUTION)
+        for entry in manifest["models"]:
+            if entry["status"] != "ok":
+                continue
+            name, params = entry["name"], entry["params"]
+            agg = attribution.filter(pl.col("model") == name).select(
+                pl.col("channel").alias("channels"), "attribution"
+            )
+            if name in _CATEGORICAL_MODELS:
+                agg = agg.with_columns(pl.col("channels").cast(pl.Categorical))
+            metadata = {"model_name": name, "kwargs": params}
+            if name == "markov":
+                tm, names = _transition_matrix_from_long(
+                    _read_member(zf, TRANSITION_MATRIX)
+                )
+                re = _read_member(zf, REMOVAL_EFFECT)
+                metadata["transition_matrix"] = tm
+                metadata["removal_effect"] = pd.DataFrame(
+                    {"removal_effect": re["removal_effect"].to_numpy()},
+                    index=re["channel"].to_list(),
+                )
+                metadata["channels_names"] = names
+            elif name == "shapley":
+                col = f"attribution_shapley_size{params['max_size']}_{params['value_column']}_algorithmic"
+                metadata["conv_table"] = _read_member(zf, CONV_TABLE).rename(
+                    {"attribution": col}
+                )
+            mam.results[name] = AttributionResult(None, agg, metadata)
+    return mam

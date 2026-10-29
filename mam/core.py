@@ -236,6 +236,13 @@ class MAM:
 
         return save_mam(self, path, models, model_kwargs)
 
+    @classmethod
+    def load(cls, path: str) -> "MAM":
+        """Reads a `.mam` file written by `MAM.save`."""
+        from .storage import load_mam
+
+        return load_mam(path)
+
     @property
     def jatoolbox(self):
         """
