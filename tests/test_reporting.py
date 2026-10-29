@@ -1,7 +1,5 @@
 import os
 import json
-import pytest
-import polars as pl
 from mam.core import MAM
 
 
