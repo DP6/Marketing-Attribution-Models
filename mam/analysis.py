@@ -331,7 +331,9 @@ class JAToolbox:
         transitions_df = (
             target_df.select([channels_utf8.alias("ch"), w_col])
             .filter(pl.col("ch").list.len() >= 2)
-            .with_columns(
+            # select em vez de with_columns: manter "ch" no explode repetiria a
+            # lista inteira em cada par: memória quadrática no tamanho da jornada.
+            .select(
                 [
                     pl.col("ch")
                     .list.slice(0, pl.col("ch").list.len() - 1)
@@ -339,6 +341,7 @@ class JAToolbox:
                     pl.col("ch")
                     .list.slice(1, pl.col("ch").list.len() - 1)
                     .alias("dest_list"),
+                    pl.col(w_col),
                 ]
             )
             .explode(["orig_list", "dest_list"])
