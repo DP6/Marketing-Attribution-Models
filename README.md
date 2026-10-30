@@ -18,9 +18,24 @@ A **Nova MAM** é uma biblioteca de alta performance para Modelagem de Atribuiç
 
 A biblioteca requer Python 3.8+ e as dependências listadas no `pyproject.toml`.
 
-Para instalar em modo de desenvolvimento em seu ambiente virtual:
+Para usar a biblioteca, instale o pacote a partir do PyPI:
 
 ```bash
+pip install marketing-attribution-models
+```
+
+O pacote é importado como `mam` (na versão 1.x, o import era `marketing_attribution_models`):
+
+```python
+from mam import MAM
+```
+
+Para contribuir com o projeto, clone o repositório e instale em modo de desenvolvimento em seu ambiente virtual:
+
+```bash
+git clone https://github.com/DP6/Marketing-Attribution-Models.git
+cd Marketing-Attribution-Models
+
 # Certifique-se de ativar o seu ambiente virtual
 source .venv/bin/activate
 
@@ -33,7 +48,7 @@ pip install -e .[dev]
 ## 📁 Estrutura de Arquivos
 
 ```
-nova_mam/
+Marketing-Attribution-Models/
 ├── mam/
 │   ├── __init__.py
 │   ├── core.py             # Orquestrador unificado da API (Classe principal MAM)
@@ -295,7 +310,7 @@ Aplica conceitos de Teoria dos Jogos Cooperativos para avaliar a contribuição 
 res_shapley = mam.run_shapley(max_size=4, value_column="conv_rate")
 
 # Tabela de conversão agrupada de coalizões gerada
-conv_table = res.metadata["conv_table"]
+conv_table = res_shapley.metadata["conv_table"]
 ```
 
 ---
@@ -328,11 +343,11 @@ pytest
 O script `validate_migration.py` executa o código legado de forma assíncrona ao lado da Nova MAM em um dataset sintético de grande escala, provando a estrita paridade matemática das heurísticas e calculando o ganho de velocidade (speedup):
 
 ```bash
-python validate_migration.py
+python examples/validate_migration.py
 ```
 
 ---
 
 ## 📄 Licença e Contribuição
 
-Projeto licenciado nos termos internos da DP6. Todas as contribuições devem aderir às convenções descritas no manifesto técnico e passar em 100% da suíte de testes automáticos livres de deprecation warnings.
+Projeto licenciado sob a licença Apache 2.0 (veja o arquivo `LICENSE`). Todas as contribuições devem aderir às convenções descritas no manifesto técnico e passar em 100% da suíte de testes automáticos livres de deprecation warnings.
