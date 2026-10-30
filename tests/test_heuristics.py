@@ -163,6 +163,27 @@ def test_position_based_without_time_column():
     assert abs(res_dict.get("C") - 0.4) < 1e-5
 
 
+def test_position_based_drops_unused_list_columns():
+    # Colunas de lista extras não podem ser repetidas em cada touchpoint
+    # após o explode (memória quadrática no tamanho da jornada)
+    from mam.models.heuristics import PositionBasedModel
+
+    df = pl.DataFrame(
+        {
+            "journey_id": ["a"],
+            "channels": [["A", "B", "C"]],
+            "time_till_conv": [[2.0, 1.0, 0.0]],
+            "extra_list": [["x", "y", "z"]],
+            "has_conversion": [True],
+            "weight": [1],
+            "conversion_value": [1.0],
+        }
+    )
+    raw = PositionBasedModel().calculate(df)
+    assert "extra_list" not in raw.columns
+    assert "time_till_conv" not in raw.columns
+
+
 def test_time_decay(format_1_data):
     mam_instance = MAM(
         df=format_1_data,

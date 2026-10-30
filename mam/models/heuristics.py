@@ -65,10 +65,19 @@ class PositionBasedModel(BaseModel):
     def calculate(self, df: pl.DataFrame) -> pl.DataFrame:
         # Atribui 40% ao primeiro e último, 20% distribuídos aos intermediários
 
-        # time_till_conv não é usado aqui: repetir a lista inteira em cada
-        # touchpoint faz a memória crescer com o quadrado da jornada.
+        # Apenas as colunas usadas: qualquer outra coluna de lista (ex.:
+        # time_till_conv) seria repetida em cada touchpoint após o explode,
+        # fazendo a memória crescer com o quadrado da jornada.
         exploded = (
-            df.select(pl.exclude("time_till_conv"))
+            df.select(
+                [
+                    "journey_id",
+                    "channels",
+                    "has_conversion",
+                    "weight",
+                    "conversion_value",
+                ]
+            )
             .with_columns(pl.col("channels").list.len().alias("journey_len"))
             .explode("channels")
             .with_columns(pl.int_range(0, pl.len()).over("journey_id").alias("pos_idx"))
