@@ -120,23 +120,21 @@ def test_position_based(format_2_data):
 
 
 def test_position_based_time_list_not_matching_path():
-    # Tempos com tamanho diferente do caminho, ou ausentes, não impedem o cálculo
+    # O modelo não lê os tempos: tamanho diferente do caminho, ou ausentes, não
+    # impedem o cálculo. Chamada direta, porque o MAM recusa essa entrada (I4).
+    from mam.models.heuristics import PositionBasedModel
+
     df = pl.DataFrame(
         {
             "journey_id": ["j1", "j2"],
-            "journey": ["A > B > C", "A > C"],
-            "conversion": [True, True],
-            "time_till_end": ["7200 > 0", None],
+            "channels": [["A", "B", "C"], ["A", "C"]],
+            "time_till_conv": [[7200.0, 0.0], None],
+            "has_conversion": [True, True],
+            "weight": [1, 1],
+            "conversion_value": [1.0, 1.0],
         }
     )
-    mam_instance = MAM(
-        df=df,
-        format_type="journey",
-        channels_colname="journey",
-        journey_with_conv_colname="conversion",
-        time_till_conv_colname="time_till_end",
-    )
-    agg_df = mam_instance.run_position_based().to_polars()
+    agg_df = PositionBasedModel().get_aggregated_results(df)
     res_dict = dict(zip(agg_df["channels"], agg_df["attribution"]))
     assert abs(res_dict.get("A") - 0.9) < 1e-5
     assert abs(res_dict.get("B") - 0.2) < 1e-5

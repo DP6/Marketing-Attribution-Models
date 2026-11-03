@@ -1,8 +1,11 @@
+import warnings
+
 import polars as pl
 import pandas as pd
 from typing import Dict, Union, Optional, List
 from .preprocessing import MAMPipeline
 from .results import AttributionResult
+from .validation import resolve_format
 from .models.heuristics import (
     LastClickModel,
     FirstClickModel,
@@ -13,24 +16,8 @@ from .models.heuristics import (
 from .models.markov import MarkovModel
 from .models.shapley import ShapleyModel
 
-_FORMAT_ALIASES = {
-    "session": "session",
-    "format_1": "session",
-    "journey": "journey",
-    "format_2": "journey",
-    "grouped_journey": "grouped_journey",
-    "format_3": "grouped_journey",
-}
-
-
-def _normalize_format_type(format_type: str) -> str:
-    normalized = _FORMAT_ALIASES.get(format_type.lower().strip())
-    if normalized is None:
-        raise ValueError(
-            f"Unknown format_type '{format_type}'. "
-            "Supported formats: 'session', 'journey', 'grouped_journey'."
-        )
-    return normalized
+# Shapley time doubles with each unique channel of a journey (0.3 s at 14 channels)
+SHAPLEY_SLOW_CHANNELS = 15
 
 
 class MAM:
@@ -57,7 +44,7 @@ class MAM:
         self.verbose = verbose
         self.sep = path_separator
         self.conversion_value_colname = conversion_value_colname
-        self.format_type = _normalize_format_type(format_type)
+        self.format_type = resolve_format(format_type)
         self.create_journey_id_based_on_conversion = (
             create_journey_id_based_on_conversion
         )
@@ -97,7 +84,7 @@ class MAM:
         obj.verbose = False
         obj.sep = path_separator
         obj.conversion_value_colname = conversion_value_colname
-        obj.format_type = _normalize_format_type(format_type)
+        obj.format_type = resolve_format(format_type)
         obj.create_journey_id_based_on_conversion = (
             create_journey_id_based_on_conversion
         )
@@ -186,6 +173,21 @@ class MAM:
     def run_shapley(
         self, max_size: int = 4, value_column: str = "conv_rate"
     ) -> AttributionResult:
+        if max_size is None or max_size > SHAPLEY_SLOW_CHANNELS:
+            longest = (
+                self.unified_df.get_column("channels")
+                .cast(pl.List(pl.String))
+                .list.n_unique()
+                .max()
+            )
+            if longest and longest > SHAPLEY_SLOW_CHANNELS:
+                warnings.warn(
+                    f"A journey has {longest} unique channels and max_size is {max_size}: "
+                    "Shapley time doubles with each channel and can run for hours. "
+                    f"Set max_size to {SHAPLEY_SLOW_CHANNELS} or less.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         model_instance = ShapleyModel(
             max_size=max_size, value_column=value_column, separator=self.sep
         )
