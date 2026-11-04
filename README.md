@@ -300,6 +300,53 @@ conv_table = res.metadata["conv_table"]
 
 ---
 
+## 💾 Salvando e carregando análises (.mam)
+
+Uma análise completa (jornadas unificadas + resultados dos modelos) pode ser gravada em um único arquivo `.mam` e recarregada depois, sem reprocessar os dados brutos:
+
+```python
+from mam.core import MAM
+
+# `mam` é uma instância já criada (veja o Guia de Ingestão de Dados)
+
+# Roda os modelos informados e grava o arquivo (retorna o manifest)
+manifest = mam.save(
+    "analise.mam",
+    models=["last_click", "linear", "markov", "shapley"],
+    model_kwargs={"shapley": {"max_size": 3}},
+)
+
+# Carrega em outra sessão e continua a análise
+loaded = MAM.load("analise.mam")
+print(loaded.results["markov"].to_polars())
+loaded.run_first_click()  # roda um novo modelo sobre a instância carregada
+```
+
+Modelos que falham durante o `save` não abortam a gravação: ficam registrados no manifest com `status: "error"` e não geram linhas de resultado.
+
+### Estrutura do arquivo
+
+O `.mam` é um ZIP (sem compressão) com arquivos Parquet e um `manifest.json`:
+
+| Membro | Conteúdo |
+|---|---|
+| `manifest.json` | `format`, `format_version` (atualmente `1`), `mam_version`, `created_at`, parâmetros de entrada (`input`), lista de `models` (nome, `status`, `params`; `channels_dtype` apenas nas entradas `ok` e `error` apenas nas entradas `error`) e contagem de linhas por membro (`files`) |
+| `input/journeys.parquet` | DataFrame unificado de jornadas (canais como lista de strings) |
+| `results/attribution.parquet` | Atribuição de todos os modelos em formato longo: `model`, `channel`, `attribution` |
+| `markov/transition_matrix.parquet` | Matriz de transição em formato longo: `from_state`, `to_state`, `probability` (apenas se `markov` foi salvo) |
+| `markov/removal_effect.parquet` | `channel`, `removal_effect` (apenas se `markov` foi salvo) |
+| `shapley/conv_table.parquet` | Tabela de conversão das coalizões, com coluna `attribution` (apenas se `shapley` foi salvo) |
+
+### Compatibilidade
+
+O Polars grava tipos Arrow `large_string`/`large_list`; leitores que validam o schema devem aceitar tanto `string`/`large_string` quanto `list`/`large_list`.
+
+Adicionar colunas, grupos ou modelos é compatível; renomear ou remover sobe o `format_version`. Arquivos com `format_version` diferente do suportado são recusados pelo `MAM.load` com um erro explícito.
+
+> **Nota:** os resultados carregados não têm o resultado granular por jornada (`raw_df=None`), portanto `to_raw_polars()` retorna `None`. Apenas a atribuição agregada por canal, os parâmetros do modelo (`kwargs`) e os artefatos do modelo (matriz de transição e efeito de remoção do Markov, `conv_table` do Shapley) são restaurados.
+
+---
+
 ## 📈 Geração de Relatórios Visuais e BI
 
 Você pode facilmente gerar relatórios ricos e interativos em HTML, além de exportar dados consolidados em formato JSON ideal para ferramentas de Business Intelligence (BI):
