@@ -14,7 +14,10 @@ class MarkovModel(BaseModel):
 
     def _build_transition_matrix(self, df: pl.DataFrame):
         # 1. Construção de Caminhos Estendidos
-        extended_df = df.with_columns(
+        # Apenas as colunas necessárias: o explode abaixo repete cada coluna em
+        # cada par, e colunas de lista repetidas fazem a memória crescer com o
+        # quadrado do tamanho da jornada.
+        extended_df = df.select(
             pl.concat_list(
                 [
                     pl.lit(["(inicio)"]),
@@ -23,12 +26,13 @@ class MarkovModel(BaseModel):
                     .then(pl.lit(["(conversion)"]))
                     .otherwise(pl.lit(["(null)"])),
                 ]
-            ).alias("extended_channels")
+            ).alias("extended_channels"),
+            pl.col("weight"),
         )
 
         # 2. Criação de Pares de Transição
         transitions_df = (
-            extended_df.with_columns(
+            extended_df.select(
                 [
                     pl.col("extended_channels")
                     .list.slice(0, pl.col("extended_channels").list.len() - 1)
@@ -36,6 +40,7 @@ class MarkovModel(BaseModel):
                     pl.col("extended_channels")
                     .list.slice(1, pl.col("extended_channels").list.len() - 1)
                     .alias("dest_list"),
+                    pl.col("weight"),
                 ]
             )
             .explode(["orig_list", "dest_list"])
