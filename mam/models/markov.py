@@ -14,13 +14,11 @@ class MarkovModel(BaseModel):
 
     @staticmethod
     def _count_transitions(df: pl.DataFrame) -> pl.DataFrame:
-        """Soma `weight` por par (origem, destino) de cada jornada.
-
-        Cada jornada é lida como (inicio) -> canais -> (conversion)/(null). As
-        transições são contadas em três partes, sem montar listas
-        intermediárias por jornada (o que multiplicava a memória):
-        início -> primeiro canal, canal -> próximo canal e último canal -> fim.
-        """
+        """Soma `weight` por par (origem, destino) de cada jornada."""
+        # Cada jornada é lida como (inicio) -> canais -> (conversion)/(null). As
+        # transições são contadas em três partes, sem montar listas
+        # intermediárias por jornada (o que multiplicava a memória):
+        # início -> primeiro canal, canal -> próximo canal e último canal -> fim.
         channels = pl.col("channels")
         n_channels = channels.list.len()
         end_state = (
