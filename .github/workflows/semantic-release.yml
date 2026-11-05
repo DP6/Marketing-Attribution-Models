@@ -28,6 +28,9 @@ jobs:
       uses: python-semantic-release/python-semantic-release@v9
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        # master is protected (required "lint" check), so don't push a bump commit;
+        # the version lives in the tag + PyPI build only.
+        commit: false
 
     - name: Publish to PyPI
       if: steps.release.outputs.released == 'true'
