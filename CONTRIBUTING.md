@@ -58,11 +58,11 @@ A message without a type (e.g. `ajustes no pyproject`) is ignored: if every comm
 Nothing is done by hand. On every push to `master`, the `Semantic Release` workflow:
 
 1. Reads the commits since the last `vX.Y.Z` tag and works out the next version.
-2. Builds the package with that version.
-3. Pushes the `vX.Y.Z` tag and creates a GitHub Release.
+2. Pushes the `vX.Y.Z` tag and creates a GitHub Release with the release notes.
+3. Builds the package with that version.
 4. Publishes to [PyPI](https://pypi.org/project/marketing_attribution_models/) via Trusted Publishing.
 
-The **git tags** are the source of truth for the version. The `version` field in `pyproject.toml` is not updated on `master` (the branch is protected, so the workflow doesn't push a bump commit). Don't edit it by hand.
+The **git tag** is the only place the version is stored. `pyproject.toml` has no hardcoded version: [setuptools-scm](https://setuptools-scm.readthedocs.io/) reads it from the tag at build time (a build from an untagged commit gets a dev version such as `2.2.1.dev3+g1a2b3c4`). Never create `v*` tags by hand. Release notes are on [GitHub Releases](https://github.com/DP6/Marketing-Attribution-Models/releases).
 
 ## License
 
