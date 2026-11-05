@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel"]
+requires = ["setuptools>=64", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "marketing_attribution_models"
-version = "2.1.1"  # stale on purpose: real version comes from git tags (semantic-release)
+# Version comes from the git tag (setuptools-scm); semantic-release creates the tags.
+dynamic = ["version"]
 description = "Nova MAM (Marketing Attribution Models) refatorada com Polars e Jatoolbox"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -35,8 +36,8 @@ dev = [
 [tool.setuptools.packages.find]
 include = ["mam*"]
 
+[tool.setuptools_scm]
+
 [tool.semantic_release]
-version_toml = ["pyproject.toml:project.version"]
 branch = "master"
-build_command = "pip install build && python -m build"
 
