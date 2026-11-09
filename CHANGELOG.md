@@ -1,5 +1,7 @@
 # CHANGELOG
 
+From v2.2.0 on, release notes are published on [GitHub Releases](https://github.com/DP6/Marketing-Attribution-Models/releases).
+
 
 ## v2.1.1 (2026-09-21)
 

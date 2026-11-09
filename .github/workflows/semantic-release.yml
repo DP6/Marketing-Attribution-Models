@@ -28,6 +28,17 @@ jobs:
       uses: python-semantic-release/python-semantic-release@v9
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        # Version lives only in git tags (setuptools-scm), so nothing is
+        # committed to master: semantic-release just tags + creates the GitHub Release.
+        commit: false
+        changelog: false
+        build: false
+
+    - name: Build
+      if: steps.release.outputs.released == 'true'
+      env:
+        SETUPTOOLS_SCM_PRETEND_VERSION: ${{ steps.release.outputs.version }}
+      run: pip install build && python -m build
 
     - name: Publish to PyPI
       if: steps.release.outputs.released == 'true'
