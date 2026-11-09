@@ -3,6 +3,8 @@ import polars as pl
 import numpy as np
 import datetime
 
+from mam.core import MAM
+
 # Setup random seed for reproducibility
 np.random.seed(42)
 
@@ -260,3 +262,78 @@ def bulk_data_generator():
         "format_2": generate_bulk_format_2,
         "format_3": generate_bulk_format_3,
     }
+
+
+@pytest.fixture
+def format_2_data():
+    return pl.DataFrame(
+        {
+            "journey_id": ["j1", "j2", "j3", "j4"],
+            "journey": [
+                "Direct > Google_Search > Meta_Ads",
+                "Direct > Meta_Ads",
+                "Google_Search > Direct",
+                "Meta_Ads",
+            ],
+            "conversion": [True, True, False, False],
+            "time_till_end": ["10 > 5 > 0", "20 > 0", "15 > 0", "0"],
+        }
+    )
+
+
+@pytest.fixture
+def format_3_data():
+    return pl.DataFrame(
+        {
+            "journey": ["Direct > Google_Search", "Meta_Ads > Direct", "Google_Search"],
+            "conversion": [True, False, False],
+            "occurrences": [10, 20, 5],
+        }
+    )
+
+
+@pytest.fixture
+def mam_f1(small_format_1_df):
+    return MAM(
+        small_format_1_df,
+        format_type="session",
+        channels_colname="channel",
+        journey_with_conv_colname="has_conversion",
+        datetime_colname="datetime",
+        user_id_colname="user_id",
+    )
+
+
+@pytest.fixture
+def mam_f2(format_2_data):
+    return MAM(
+        format_2_data,
+        format_type="journey",
+        channels_colname="journey",
+        journey_with_conv_colname="conversion",
+        time_till_conv_colname="time_till_end",
+    )
+
+
+@pytest.fixture
+def mam_f3(format_3_data):
+    return MAM(
+        format_3_data,
+        format_type="grouped_journey",
+        channels_colname="journey",
+        journey_with_conv_colname="conversion",
+        occurrences_colname="occurrences",
+    )
+
+
+@pytest.fixture
+def mam_f2_revenue(format_2_data):
+    df = format_2_data.with_columns(pl.Series("revenue", [100.0, 50.0, 0.0, 0.0]))
+    return MAM(
+        df,
+        format_type="journey",
+        channels_colname="journey",
+        journey_with_conv_colname="conversion",
+        time_till_conv_colname="time_till_end",
+        conversion_value_colname="revenue",
+    )

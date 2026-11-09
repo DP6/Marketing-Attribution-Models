@@ -12,36 +12,70 @@ class MarkovModel(BaseModel):
         self.channels_names = None
         self._calculated_weights = None
 
-    def _build_transition_matrix(self, df: pl.DataFrame):
-        # 1. Construção de Caminhos Estendidos
-        extended_df = df.with_columns(
-            pl.concat_list(
-                [
-                    pl.lit(["(inicio)"]),
-                    pl.col("channels").cast(pl.List(pl.Utf8)),
-                    pl.when(pl.col("has_conversion"))
-                    .then(pl.lit(["(conversion)"]))
-                    .otherwise(pl.lit(["(null)"])),
-                ]
-            ).alias("extended_channels")
+    @staticmethod
+    def _count_transitions(df: pl.DataFrame) -> pl.DataFrame:
+        """Soma `weight` por par (origem, destino) de cada jornada."""
+        # Cada jornada é lida como (inicio) -> canais -> (conversion)/(null). As
+        # transições são contadas em três partes, sem montar listas
+        # intermediárias por jornada (o que multiplicava a memória):
+        # início -> primeiro canal, canal -> próximo canal e último canal -> fim.
+        channels = pl.col("channels")
+        n_channels = channels.list.len()
+        end_state = (
+            pl.when(pl.col("has_conversion"))
+            .then(pl.lit("(conversion)"))
+            .otherwise(pl.lit("(null)"))
+        )
+        count = pl.col("weight").sum().alias("transition_count")
+        base = df.lazy().select("channels", "has_conversion", "weight")
+
+        # (inicio) -> primeiro canal; jornada sem canais vai direto ao fim
+        start = base.group_by(
+            pl.lit("(inicio)").alias("orig_list"),
+            pl.when(n_channels > 0)
+            .then(channels.list.first().cast(pl.Utf8))
+            .otherwise(end_state)
+            .alias("dest_list"),
+        ).agg(count)
+
+        # último canal -> (conversion)/(null)
+        end = (
+            base.filter(n_channels > 0)
+            .group_by(
+                channels.list.last().cast(pl.Utf8).alias("orig_list"),
+                end_state.alias("dest_list"),
+            )
+            .agg(count)
         )
 
-        # 2. Criação de Pares de Transição
-        transitions_df = (
-            extended_df.with_columns(
-                [
-                    pl.col("extended_channels")
-                    .list.slice(0, pl.col("extended_channels").list.len() - 1)
-                    .alias("orig_list"),
-                    pl.col("extended_channels")
-                    .list.slice(1, pl.col("extended_channels").list.len() - 1)
-                    .alias("dest_list"),
-                ]
+        # canal -> próximo canal: após o explode, o destino é a linha seguinte,
+        # válido só enquanto ela pertence à mesma jornada
+        journey = pl.col("journey")
+        middle = (
+            base.select(pl.int_range(pl.len()).alias("journey"), "channels", "weight")
+            .explode("channels")
+            .select(
+                channels.alias("orig_list"),
+                channels.shift(-1).alias("dest_list"),
+                "weight",
+                (journey == journey.shift(-1)).alias("same_journey"),
             )
-            .explode(["orig_list", "dest_list"])
-            .group_by(["orig_list", "dest_list"])
-            .agg(pl.col("weight").sum().alias("transition_count"))
+            .filter(pl.col("same_journey"))
+            .group_by("orig_list", "dest_list")
+            .agg(count)
+            .with_columns(pl.col("orig_list", "dest_list").cast(pl.Utf8))
         )
+
+        return (
+            pl.concat([start, middle, end], how="vertical_relaxed")
+            .group_by("orig_list", "dest_list")
+            .agg(pl.col("transition_count").sum())
+            .collect()
+        )
+
+    def _build_transition_matrix(self, df: pl.DataFrame):
+        # 1-2. Contagem das transições (ponderadas por `weight`)
+        transitions_df = self._count_transitions(df)
 
         if not self.transition_to_same_state:
             transitions_df = transitions_df.filter(
