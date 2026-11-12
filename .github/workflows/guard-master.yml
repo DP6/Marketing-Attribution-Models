@@ -1,0 +1,16 @@
+name: Guard master
+on:
+  pull_request:
+    branches: [master]
+jobs:
+  source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only staging may target master
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$HEAD_REF" != "staging" ]; then
+            echo "::error::PRs para master devem vir de staging. Origem: $HEAD_REF"
+            exit 1
+          fi

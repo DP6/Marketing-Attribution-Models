@@ -1,5 +1,9 @@
 name: Semantic Release
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 on:
   push:
     branches:
