@@ -38,6 +38,6 @@ include = ["mam*"]
 
 [tool.setuptools_scm]
 
-[tool.semantic_release]
-branch = "master"
+[tool.semantic_release.branches.main]
+match = "master"
 
