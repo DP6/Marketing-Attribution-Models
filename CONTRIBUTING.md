@@ -1,6 +1,6 @@
 # Contributing guide
 
-Thank you for your help making penguin-datalayer-collect better! Every contribution is appreciated. There are many areas where you can contribute.
+Thank you for your help making Marketing Attribution Models better! Every contribution is appreciated. There are many areas where you can contribute.
 
 ::: tip Submit issue first
 If you plan to implement a new feature or some other change please create an issue first, to make sure that your work is not lost.
@@ -10,7 +10,7 @@ If you plan to implement a new feature or some other change please create an iss
 
 ## Documentation
 
-pinguin-datalayer-collect has a lot of features and maintaining documentation takes time. If anything is unclear, or could be explained better, we appreciate the time you spend correcting or clarifying it.
+Marketing Attribution Models has a lot of features and maintaining documentation takes time. If anything is unclear, or could be explained better, we appreciate the time you spend correcting or clarifying it.
 
 There is a link in the bottom of each website page to quickly edit it.
 
@@ -19,7 +19,6 @@ There is a link in the bottom of each website page to quickly edit it.
 Before submitting the issue:
 
 - Search the existing issues
-- Review [Frequently Asked Questions](./docs/faq.md).
 - Provide all the relevant information, reducing both your schema and data to the smallest possible size when they still have the issue.
 
 We value simplicity - simplifying the example that shows the issue makes it more valuable for other users. This process helps us reduce situations where an error is occurring due to incorrect usage rather than a bug.
@@ -35,7 +34,7 @@ Please make sure to include the following information in the issue:
 6. Validation result, data AFTER validation, error messages.
 7. What results did you expect?
 
-[Create bug report](https://github.com/dp6/penguin-datalayer-collect/issues/new?template=bug_report.md).
+[Create bug report](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=bug_report.md).
 
 ### Security vulnerabilities
 
@@ -45,7 +44,7 @@ Please do NOT report security vulnerabilities via GitHub issues.
 
 ### <a name="changes"></a>Change proposals
 
-[Create a proposal](https://github.com/dp6/penguin-datalayer-collect/issues/new?template=feature_request.md) for a new feature, option or some other improvement.
+[Create a proposal](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=feature_request.md) for a new feature, option or some other improvement.
 
 Please include this information:
 
@@ -64,7 +63,7 @@ Please include as much details as possible - the more information, the better.
 
 ### <a name="installation"></a>Installation and dependency issues
 
-[Create an issue](https://github.com/dp6/penguin-datalayer-collect/issues/new?template=bug_report.md) to report problems that happen during penguin-datalayer-collect installation or when penguin-datalayer-collect is missing some dependency.
+[Create an issue](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=bug_report.md) to report problems that happen during Marketing Attribution Models installation or when Marketing Attribution Models is missing some dependency.
 
 Before submitting the issue, please try the following:
 
@@ -83,7 +82,7 @@ If nothing helps, please submit:
 
 ## Code
 
-Thanks a lot for considering contributing to penguin-datalayer-collect! Our users have created many great features, and we look forward to your contributions.
+Thanks a lot for considering contributing to Marketing Attribution Models! Our users have created many great features, and we look forward to your contributions.
 
 #### Development
 
@@ -98,7 +97,7 @@ npm test
 
 We want to iterate on the code efficiently. To speed up the process, please follow these steps:
 
-1. Submit an [issue with the bug](https://github.com/dp6/penguin-datalayer-collect/issues/new) or with the proposed change (unless the contribution is to fix the documentation typos and mistakes).
+1. Submit an [issue with the bug](https://github.com/DP6/Marketing-Attribution-Models/issues/new) or with the proposed change (unless the contribution is to fix the documentation typos and mistakes).
 2. Describe the proposed api and implementation plan (unless the issue is a relatively simple bug and fixing it doesn't change any api).
 3. Once agreed, please write as little code as possible to achieve the desired result. We are passionate about keeping our library size optimized.
 4. Please add the tests both for the added feature and, if you are submitting an option, for the existing behaviour when this option is turned off or not passed.
@@ -113,10 +112,10 @@ When contributing the code you confirm that:
 
 1. Your contribution is created by you.
 2. You have the right to submit it under the Apache-2.0 license.
-3. You understand and agree that your contribution is public, will be stored indefinitely, can be redistributed as the part of penguin-datalayer-collect or another related package under Apache-2.0 license, modified or completely removed from penguin-datalayer-collect.
-4. You grant irrevocable Apache-2.0 license to use your contribution as part of penguin-datalayer-collect or any other package.
+3. You understand and agree that your contribution is public, will be stored indefinitely, can be redistributed as the part of Marketing Attribution Models or another related package under Apache-2.0 license, modified or completely removed from Marketing Attribution Models.
+4. You grant irrevocable Apache-2.0 license to use your contribution as part of Marketing Attribution Models or any other package.
 5. You waive all rights to your contribution.
-6. Unless you request otherwise, you can be mentioned as the author of the contribution in the penguin-datalayer-collect documentation and change log.
+6. Unless you request otherwise, you can be mentioned as the author of the contribution in the Marketing Attribution Models documentation and change log.
 
 ## Attribution
 
