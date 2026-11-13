@@ -12,6 +12,8 @@ from mam.preprocessing import (
     pipeline_format_2_to_unified,
     pipeline_format_3_to_unified,
 )
+from mam.validation import InputValidationError
+from mam.quality import DataQualityReport, check_data_quality
 from mam.core import MAM
 from mam.results import AttributionResult
 from mam.analysis import JAToolbox
@@ -26,6 +28,9 @@ from mam.reporting import generate_report
 
 __all__ = [
     "MAMPipeline",
+    "InputValidationError",
+    "DataQualityReport",
+    "check_data_quality",
     "pipeline_format_1_to_unified",
     "pipeline_format_2_to_unified",
     "pipeline_format_3_to_unified",
