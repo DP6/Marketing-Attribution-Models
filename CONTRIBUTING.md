@@ -1,14 +1,15 @@
-# Contributing guide
+# Contributing to MAM
 
 Thank you for your help making Marketing Attribution Models better! Every contribution is appreciated. There are many areas where you can contribute.
 
-::: tip Submit issue first
-If you plan to implement a new feature or some other change please create an issue first, to make sure that your work is not lost.
-:::
+## Reporting bugs and proposing changes
 
-[[toc]]
+- Search the [existing issues](https://github.com/DP6/Marketing-Attribution-Models/issues) first.
+- Bugs: use the [bug report template](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=bug_report.md). Include the MAM version (`pip show marketing_attribution_models`), Python version, the smallest input data that reproduces the problem, what you got, and what you expected.
+- Features: use the [feature request template](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=feature_request.md). Describe the problem, not just the solution.
+- **Security vulnerabilities:** email koopas@dp6.com.br. Do not open a public issue.
 
-## Documentation
+## Development setup
 
 Marketing Attribution Models has a lot of features and maintaining documentation takes time. If anything is unclear, or could be explained better, we appreciate the time you spend correcting or clarifying it.
 
@@ -71,55 +72,50 @@ Before submitting the issue, please try the following:
 - try using `yarn` instead of `npm` - the issue can be related to https://github.com/npm/npm/issues/19877
 - remove `node_modules` and `package-lock.json` and run `npm install` again
 
-If nothing helps, please submit:
-
-1. The version you are using
-2. Operating system and Node.js version
-3. Package manager and its version
-4. Link to (or contents of) package.json and package-lock.json
-5. Error messages
-6. The output of `npm ls`
-
-## Code
-
-Thanks a lot for considering contributing to Marketing Attribution Models! Our users have created many great features, and we look forward to your contributions.
-
-#### Development
-
-Running tests:
+Before pushing:
 
 ```bash
-npm install
-npm test
+pytest          # tests
+black .         # formatting - CI runs `black . --check` and blocks merges on failure
 ```
 
-#### Pull requests
+## Pull requests
 
-We want to iterate on the code efficiently. To speed up the process, please follow these steps:
+1. Branch off `master` (e.g. `fix/explode-memory`, `feat/mam-file-format`).
+2. Keep the change focused; avoid unrelated refactors or reformatting.
+3. Add or update tests in `tests/` for any behavior change.
+4. Make sure `pytest` and `black . --check` pass.
+5. Open the PR against `master` and fill in the template. It needs 2 approvals and a green `lint` check to merge.
 
-1. Submit an [issue with the bug](https://github.com/DP6/Marketing-Attribution-Models/issues/new) or with the proposed change (unless the contribution is to fix the documentation typos and mistakes).
-2. Describe the proposed api and implementation plan (unless the issue is a relatively simple bug and fixing it doesn't change any api).
-3. Once agreed, please write as little code as possible to achieve the desired result. We are passionate about keeping our library size optimized.
-4. Please add the tests both for the added feature and, if you are submitting an option, for the existing behaviour when this option is turned off or not passed.
-5. Please avoid unnecessary changes, refactoring or changing coding styles as part of your change (unless the change was proposed as refactoring).
-6. Follow the coding conventions even if they are not validated.
-7. Please run the tests before committing your code.
-8. If tests fail in CI build after you make a PR please investigate and fix the issue.
+## Commit messages (this decides the release)
 
-#### Contributions license
+Releases are fully automated with [python-semantic-release](https://python-semantic-release.readthedocs.io/). The **commit messages** on `master` decide whether a new version is published and which number it gets, so they must follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-When contributing the code you confirm that:
+```
+<type>(optional scope): short description
+```
 
-1. Your contribution is created by you.
-2. You have the right to submit it under the Apache-2.0 license.
-3. You understand and agree that your contribution is public, will be stored indefinitely, can be redistributed as the part of Marketing Attribution Models or another related package under Apache-2.0 license, modified or completely removed from Marketing Attribution Models.
-4. You grant irrevocable Apache-2.0 license to use your contribution as part of Marketing Attribution Models or any other package.
-5. You waive all rights to your contribution.
-6. Unless you request otherwise, you can be mentioned as the author of the contribution in the Marketing Attribution Models documentation and change log.
+| Type | Example | Release |
+|---|---|---|
+| `fix` | `fix: select only used columns before explode` | patch (2.1.1 -> 2.1.2) |
+| `perf` | `perf(markov): count transitions without list copies` | patch |
+| `feat` | `feat: MAM.load reads .mam files` | minor (2.1.1 -> 2.2.0) |
+| `feat!` / `fix!`, or a `BREAKING CHANGE:` footer | `feat!: drop pandas input support` | major (2.1.1 -> 3.0.0) |
+| `docs`, `style`, `test`, `refactor`, `ci`, `build`, `chore` | `docs: document the .mam file format` | no release |
 
-## Attribution
+A message without a type (e.g. `ajustes no pyproject`) is ignored: if every commit in a PR looks like that, **no version is released**. If you squash-merge, the PR title becomes the commit message, so it must follow the same format.
 
-This Code of Conduct is adapted from the [Ajv][homepage],
-available at https://ajv.js.org/code_of_conduct/
+## How releases work
 
-[homepage]: https://ajv.js.org/
+Nothing is done by hand. On every push to `master`, the `Semantic Release` workflow:
+
+1. Reads the commits since the last `vX.Y.Z` tag and works out the next version.
+2. Pushes the `vX.Y.Z` tag and creates a GitHub Release with the release notes.
+3. Builds the package with that version.
+4. Publishes to [PyPI](https://pypi.org/project/marketing_attribution_models/) via Trusted Publishing.
+
+The **git tag** is the only place the version is stored. `pyproject.toml` has no hardcoded version: [setuptools-scm](https://setuptools-scm.readthedocs.io/) reads it from the tag at build time (a build from an untagged commit gets a dev version such as `2.2.1.dev3+g1a2b3c4`). Never create `v*` tags by hand. Release notes are on [GitHub Releases](https://github.com/DP6/Marketing-Attribution-Models/releases).
+
+## License
+
+By contributing, you agree that your contribution is licensed under the [Apache-2.0 License](LICENSE) used by this project.
