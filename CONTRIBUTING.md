@@ -1,6 +1,6 @@
 # Contributing to MAM
 
-Thanks for helping improve MAM (Marketing Attribution Models)! For anything bigger than a small fix, please [open an issue](https://github.com/DP6/Marketing-Attribution-Models/issues/new/choose) first so we can agree on the approach before you write code.
+Thank you for your help making Marketing Attribution Models better! Every contribution is appreciated. There are many areas where you can contribute.
 
 ## Reporting bugs and proposing changes
 
@@ -11,14 +11,66 @@ Thanks for helping improve MAM (Marketing Attribution Models)! For anything bigg
 
 ## Development setup
 
-Requires Python 3.8+.
+Marketing Attribution Models has a lot of features and maintaining documentation takes time. If anything is unclear, or could be explained better, we appreciate the time you spend correcting or clarifying it.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-pip install black
-```
+There is a link in the bottom of each website page to quickly edit it.
+
+## Issues
+
+Before submitting the issue:
+
+- Search the existing issues
+- Provide all the relevant information, reducing both your schema and data to the smallest possible size when they still have the issue.
+
+We value simplicity - simplifying the example that shows the issue makes it more valuable for other users. This process helps us reduce situations where an error is occurring due to incorrect usage rather than a bug.
+
+### Bug reports
+
+Please make sure to include the following information in the issue:
+
+1. What version of are you using?
+2. Does the issue happen if you use the latest version?
+3. Schema and the data you are validating (please make it as small as possible to reproduce the issue).
+5. Your code sample (please use `schema` and `data` as variables).
+6. Validation result, data AFTER validation, error messages.
+7. What results did you expect?
+
+[Create bug report](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=bug_report.md).
+
+### Security vulnerabilities
+
+To report a security vulnerability, please use the e-mail koopas@dp6.com.br.
+
+Please do NOT report security vulnerabilities via GitHub issues.
+
+### <a name="changes"></a>Change proposals
+
+[Create a proposal](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=feature_request.md) for a new feature, option or some other improvement.
+
+Please include this information:
+
+1. The version you are using.
+2. The problem you want to solve.
+3. Your solution to the problem.
+4. Would you like to implement it?
+
+If you’re requesting a change, it would be helpful to include this as well:
+
+1. What you did.
+2. What happened.
+3. What you would like to happen.
+
+Please include as much details as possible - the more information, the better.
+
+### <a name="installation"></a>Installation and dependency issues
+
+[Create an issue](https://github.com/DP6/Marketing-Attribution-Models/issues/new?template=bug_report.md) to report problems that happen during Marketing Attribution Models installation or when Marketing Attribution Models is missing some dependency.
+
+Before submitting the issue, please try the following:
+
+- use the latest stable Node.js and `npm`
+- try using `yarn` instead of `npm` - the issue can be related to https://github.com/npm/npm/issues/19877
+- remove `node_modules` and `package-lock.json` and run `npm install` again
 
 Before pushing:
 
