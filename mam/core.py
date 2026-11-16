@@ -173,6 +173,9 @@ class MAM:
     def run_shapley(
         self, max_size: int = 4, value_column: str = "conv_rate"
     ) -> AttributionResult:
+        model_instance = ShapleyModel(
+            max_size=max_size, value_column=value_column, separator=self.sep
+        )
         if max_size is None or max_size > SHAPLEY_SLOW_CHANNELS:
             longest = (
                 self.unified_df.get_column("channels")
@@ -188,9 +191,6 @@ class MAM:
                     UserWarning,
                     stacklevel=2,
                 )
-        model_instance = ShapleyModel(
-            max_size=max_size, value_column=value_column, separator=self.sep
-        )
         raw_results = model_instance.calculate(self.unified_df)
         agg_results = model_instance.get_aggregated_results(self.unified_df)
 

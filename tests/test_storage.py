@@ -66,7 +66,7 @@ def test_save_writes_expected_members_stored_and_snappy(mam_f2, tmp_path):
         assert all(i.compress_type == zipfile.ZIP_STORED for i in z.infolist())
         md = pq.ParquetFile(io.BytesIO(z.read("input/journeys.parquet"))).metadata
         assert md.row_group(0).column(0).compression == "SNAPPY"
-    assert manifest["format"] == "mam" and manifest["format_version"] == 1
+    assert manifest["format"] == "mam" and manifest["format_version"] == 2
     assert manifest["input"] == {
         "format_type": "journey",
         "path_separator": " > ",
@@ -296,10 +296,32 @@ def test_load_skips_failed_models(mam_f3, tmp_path):
     assert set(loaded.results) == {"last_click"}
 
 
-@pytest.mark.parametrize("patch", [{"format": "other"}, {"format_version": 2}])
+@pytest.mark.parametrize(
+    "patch", [{"format": "other"}, {"format_version": 3}, {"format_version": 0}]
+)
 def test_rejects_unknown_format(mam_f2, tmp_path, patch):
     p = tmp_path / "a.mam"
     mam_f2.save(str(p), models=["linear"])
     _rewrite_manifest(p, patch)
     with pytest.raises(ValueError):
+        MAM.load(str(p))
+
+
+def test_version_1_file_with_shapley_loads_with_a_warning(mam_f2, tmp_path):
+    p = tmp_path / "old.mam"
+    mam_f2.save(str(p), models=["linear", "shapley"])
+    _rewrite_manifest(p, {"format_version": 1, "mam_version": "2.1.1"})
+    with pytest.warns(UserWarning, match="old method"):
+        loaded = MAM.load(str(p))
+    assert set(loaded.results) == {"linear", "shapley"}
+
+
+def test_version_1_file_without_shapley_loads_quietly(mam_f2, tmp_path):
+    import warnings
+
+    p = tmp_path / "old.mam"
+    mam_f2.save(str(p), models=["linear"])
+    _rewrite_manifest(p, {"format_version": 1})
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         MAM.load(str(p))
