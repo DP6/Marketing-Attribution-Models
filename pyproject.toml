@@ -8,17 +8,16 @@ name = "marketing_attribution_models"
 dynamic = ["version"]
 description = "Nova MAM (Marketing Attribution Models) refatorada com Polars e Jatoolbox"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "polars>=0.20.0",
+    "polars>=1.32.0",
     "pandas>=2.0.0",
     "scipy>=1.10.0",
     "numpy>=1.24.0",
@@ -38,6 +37,6 @@ include = ["mam*"]
 
 [tool.setuptools_scm]
 
-[tool.semantic_release]
-branch = "master"
+[tool.semantic_release.branches.main]
+match = "master"
 

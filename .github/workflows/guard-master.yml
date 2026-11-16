@@ -1,0 +1,22 @@
+name: Guard master
+on:
+  pull_request:
+    branches: [master]
+jobs:
+  source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only staging or hotfix/* (from this repo) may target master
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" != "$THIS_REPO" ]; then
+            echo "::error::PRs para master devem vir de branches deste repositório (não de forks). Origem: $HEAD_REPO"
+            exit 1
+          fi
+          if [ "$HEAD_REF" != "staging" ] && [[ "$HEAD_REF" != hotfix/* ]]; then
+            echo "::error::PRs para master devem vir de staging (ou hotfix/*). Origem: $HEAD_REF"
+            exit 1
+          fi

@@ -1,0 +1,28 @@
+name: Tests
+on:
+  pull_request:
+    branches: [staging, master]
+  push:
+    branches: [staging]
+permissions:
+  contents: read
+jobs:
+  tests:
+    # Python 3.9 has no build for ubuntu-latest (26.04); pin it to 24.04.
+    runs-on: ${{ matrix.python-version == '3.9' && 'ubuntu-24.04' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      # Oldest supported Python runs against the minimum polars from pyproject.toml
+      - if: matrix.python-version == '3.9'
+        run: pip install "polars==1.32.0"
+      - run: pytest
