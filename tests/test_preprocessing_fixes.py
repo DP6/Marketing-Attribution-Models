@@ -4,7 +4,6 @@ Inputs that are valid but used to break the preprocessing or change its result
 same results as the plain input.
 """
 
-import datetime
 import decimal
 
 import numpy as np
