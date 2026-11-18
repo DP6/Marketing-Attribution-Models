@@ -305,13 +305,18 @@ efeito_remocao = res_markov.metadata["removal_effect"]
 ```
 
 #### Valor de Shapley
-Aplica conceitos de Teoria dos Jogos Cooperativos para avaliar a contribuição marginal de cada canal nas combinações de jornadas. Ele conta com **normalização por jornada**, evitando a inflação artificial em caminhos com touchpoints repetidos.
+Aplica a Teoria dos Jogos Cooperativos. Cada jornada vira o conjunto dos seus canais (sem ordem e sem repetições), e o valor de um conjunto é o `value_column` das jornadas com exatamente esses canais. Dentro de cada conjunto que converteu, cada canal recebe a média do que acrescenta ao entrar em cada subconjunto, e a receita do conjunto é dividida por essas participações.
 ```python
 res_shapley = mam.run_shapley(max_size=4, value_column="conv_rate")
 
-# Tabela de conversão agrupada de coalizões gerada
+# Uma linha por conjunto que converteu, com a divisão em `attribution`
 conv_table = res_shapley.metadata["conv_table"]
 ```
+- **`conv_table`**: colunas `combinations` (canais do conjunto, em ordem alfabética, unidos pelo separador do caminho), `conversions`, `total_sequences`, `conv_rate`, `conversion_value` (receita das jornadas que converteram, ou o número de conversões, sem receita) e `attribution` (lista com a parte de cada canal, na mesma ordem de `combinations`).
+- **`max_size`** (padrão `4`): uma jornada com mais canais distintos mantém só os `max_size` mais recentes, pela última aparição de cada canal. O tempo dobra a cada canal a mais: acima de 15 há um aviso, e acima de 20 o modelo para com um erro. `None` mantém todos.
+- **`value_column`**: `conv_rate` (padrão), `conversions`, `conversion_value` ou `total_sequences`. Muda só o valor de cada conjunto; o total atribuído é sempre a receita real (ou o número de conversões, sem receita).
+- **Resultado por jornada** (`to_raw_polars()`): cada jornada que converteu divide a própria receita com as participações do seu conjunto, e um canal que aparece mais de uma vez divide a sua parte igualmente entre os toques. A soma por canal é igual ao resultado agregado. Canais cortados pelo `max_size` recebem 0.
+- **Valores negativos**: um canal pode receber crédito negativo quando os conjuntos em que entra convertem menos do que sem ele. Isso faz parte do Shapley clássico. Nesse caso, a participação dos outros canais do conjunto passa de 100%.
 
 ---
 
@@ -345,7 +350,7 @@ O `.mam` é um ZIP (sem compressão) com arquivos Parquet e um `manifest.json`:
 
 | Membro | Conteúdo |
 |---|---|
-| `manifest.json` | `format`, `format_version` (atualmente `1`), `mam_version`, `created_at`, parâmetros de entrada (`input`), lista de `models` (nome, `status`, `params`; `channels_dtype` apenas nas entradas `ok` e `error` apenas nas entradas `error`) e contagem de linhas por membro (`files`) |
+| `manifest.json` | `format`, `format_version` (atualmente `2`), `mam_version`, `created_at`, parâmetros de entrada (`input`), lista de `models` (nome, `status`, `params`; `channels_dtype` apenas nas entradas `ok` e `error` apenas nas entradas `error`) e contagem de linhas por membro (`files`) |
 | `input/journeys.parquet` | DataFrame unificado de jornadas (canais como lista de strings) |
 | `results/attribution.parquet` | Atribuição de todos os modelos em formato longo: `model`, `channel`, `attribution` |
 | `markov/transition_matrix.parquet` | Matriz de transição em formato longo: `from_state`, `to_state`, `probability` (apenas se `markov` foi salvo) |
@@ -356,7 +361,7 @@ O `.mam` é um ZIP (sem compressão) com arquivos Parquet e um `manifest.json`:
 
 O Polars grava tipos Arrow `large_string`/`large_list`; leitores que validam o schema devem aceitar tanto `string`/`large_string` quanto `list`/`large_list`.
 
-Adicionar colunas, grupos ou modelos é compatível; renomear ou remover sobe o `format_version`. Arquivos com `format_version` diferente do suportado são recusados pelo `MAM.load` com um erro explícito.
+Adicionar colunas, grupos ou modelos é compatível; renomear ou remover sobe o `format_version`. O `MAM.load` lê as versões `1` e `2` e recusa as outras com um erro explícito. A versão `2` marca a correção do Shapley: um arquivo da versão `1` com resultados de Shapley abre com um aviso, porque esses resultados vêm do método antigo e diferem de uma nova execução.
 
 > **Nota:** os resultados carregados não têm o resultado granular por jornada (`raw_df=None`), portanto `to_raw_polars()` retorna `None`. Apenas a atribuição agregada por canal, os parâmetros do modelo (`kwargs`) e os artefatos do modelo (matriz de transição e efeito de remoção do Markov, `conv_table` do Shapley) são restaurados.
 

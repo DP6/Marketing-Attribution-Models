@@ -4,6 +4,7 @@ import io
 import json
 import math
 import os
+import warnings
 import zipfile
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
@@ -15,7 +16,10 @@ import polars as pl
 if TYPE_CHECKING:
     from .core import MAM
 
-FORMAT_VERSION = 1
+# 2: the Shapley method changed (recency truncation, per-touch split, totals)
+# and its conv_table dropped conversion_value_sum. Version 1 files still load.
+FORMAT_VERSION = 2
+READABLE_VERSIONS = (1, 2)
 
 JOURNEYS = "input/journeys.parquet"
 ATTRIBUTION = "results/attribution.parquet"
@@ -65,11 +69,6 @@ def _removal_effect(re: pd.DataFrame) -> pl.DataFrame:
             "removal_effect": re["removal_effect"].to_numpy(dtype="float64"),
         }
     )
-
-
-def _conv_table(ct: pl.DataFrame, params: dict) -> pl.DataFrame:
-    col = f"attribution_shapley_size{params['max_size']}_{params['value_column']}_algorithmic"
-    return ct.rename({col: "attribution"})
 
 
 def _check_finite(obj) -> None:
@@ -147,7 +146,7 @@ def save_mam(
             )
             members[REMOVAL_EFFECT] = _removal_effect(result.metadata["removal_effect"])
         elif name == "shapley":
-            members[CONV_TABLE] = _conv_table(result.metadata["conv_table"], params)
+            members[CONV_TABLE] = result.metadata["conv_table"]
 
     if attribution_frames:
         members[ATTRIBUTION] = pl.concat(attribution_frames)
@@ -220,10 +219,22 @@ def load_mam(path: str) -> "MAM":
         manifest = json.loads(zf.read(MANIFEST))
         if manifest.get("format") != "mam":
             raise ValueError(f"Not a .mam file: format={manifest.get('format')!r}")
-        if manifest.get("format_version") != FORMAT_VERSION:
+        version = manifest.get("format_version")
+        if version not in READABLE_VERSIONS:
             raise ValueError(
-                f"Unsupported .mam format_version {manifest.get('format_version')!r}; "
-                f"this library reads version {FORMAT_VERSION}"
+                f"Unsupported .mam format_version {version!r}; "
+                f"this library reads versions {', '.join(map(str, READABLE_VERSIONS))}"
+            )
+        if version == 1 and any(
+            m["name"] == "shapley" and m["status"] == "ok" for m in manifest["models"]
+        ):
+            warnings.warn(
+                f"{os.path.basename(str(path))} was saved by MAM "
+                f"{manifest.get('mam_version', 'before 2.2')}, before the Shapley "
+                "fixes: its Shapley results use the old method and differ from a new "
+                "run on the same data. Run run_shapley() again to get current results.",
+                UserWarning,
+                stacklevel=3,
             )
 
         inp = manifest["input"]
@@ -261,9 +272,6 @@ def load_mam(path: str) -> "MAM":
                 )
                 metadata["channels_names"] = names
             elif name == "shapley":
-                col = f"attribution_shapley_size{params['max_size']}_{params['value_column']}_algorithmic"
-                metadata["conv_table"] = _read_member(zf, CONV_TABLE).rename(
-                    {"attribution": col}
-                )
+                metadata["conv_table"] = _read_member(zf, CONV_TABLE)
             mam.results[name] = AttributionResult(None, agg, metadata)
     return mam
