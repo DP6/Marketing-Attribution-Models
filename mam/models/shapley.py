@@ -23,12 +23,10 @@ _KEY_PART = pl.concat_str(
 
 @lru_cache(maxsize=8)
 def _coalitions(n: int):
-    """Every non-empty subset of n channels and its Shapley weight per channel.
-
-    Returns (subsets, W): subsets[k] holds the channel indices of coalition k,
-    and W[k, i] is (s-1)!(n-s)!/n! when channel i is in it and -s!(n-s-1)!/n!
-    when it isn't, s being the coalition size. The Shapley values are V @ W.
-    """
+    """Every non-empty subset of n channels and its Shapley weight per channel."""
+    # Returns (subsets, W): subsets[k] holds the channel indices of coalition k,
+    # and W[k, i] is (s-1)!(n-s)!/n! when channel i is in it and -s!(n-s-1)!/n!
+    # when it isn't, s being the coalition size. The Shapley values are V @ W.
     masks = np.arange(1, 1 << n)
     members = ((masks[:, None] >> np.arange(n)) & 1).astype(bool)
     sizes = members.sum(axis=1)
@@ -41,18 +39,17 @@ def _coalitions(n: int):
 
 
 class ShapleyModel(BaseModel):
-    """Shapley attribution over the set of channels of each journey.
+    """Shapley attribution over the set of channels of each journey."""
 
-    Each journey is reduced to its distinct channels; with max_size, only the
-    max_size most recent ones (by last appearance) are kept. The value of a set
-    of channels is value_column over the journeys with exactly that set. Within
-    each converting set, the Shapley shares split the converted value of its
-    journeys, and each journey's part for a channel is divided equally among
-    that channel's touches, so the raw output adds up to the aggregate.
-
-    A channel can get a negative Shapley value when the sets it joins convert
-    less than the sets without it. It is kept, as in the textbook Shapley value.
-    """
+    # Each journey is reduced to its distinct channels; with max_size, only the
+    # max_size most recent ones (by last appearance) are kept. The value of a set
+    # of channels is value_column over the journeys with exactly that set. Within
+    # each converting set, the Shapley shares split the converted value of its
+    # journeys, and each journey's part for a channel is divided equally among
+    # that channel's touches, so the raw output adds up to the aggregate.
+    #
+    # A channel can get a negative Shapley value when the sets it joins convert
+    # less than the sets without it. It is kept, as in the textbook Shapley value.
 
     def __init__(
         self,
@@ -81,8 +78,8 @@ class ShapleyModel(BaseModel):
         self._channels = None
 
     def _with_combination(self, df: pl.DataFrame) -> pl.DataFrame:
-        """Adds _combo (distinct channels by last appearance, the max_size most
-        recent, sorted) and _key, its internal string key."""
+        """Adds _combo, the journey's set of channels, and _key, its internal key."""
+        # _combo is sorted, but holds only the max_size most recent channels.
         # Reversed, the first occurrence of each channel is its last appearance,
         # so unique keeps the most recent first and head keeps the max_size most
         # recent. One list.eval is much faster than chaining list.* calls.

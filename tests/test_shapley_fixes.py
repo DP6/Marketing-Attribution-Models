@@ -1,7 +1,7 @@
-"""
-Shapley on valid data: which channels enter the game, raw = aggregated, totals,
-options and the conversion table schema.
-"""
+"""Shapley on valid data."""
+
+# Which channels enter the game, raw = aggregated, totals, options and the
+# conversion table schema.
 
 import itertools
 import math

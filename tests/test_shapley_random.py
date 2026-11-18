@@ -1,7 +1,7 @@
-"""
-Shapley on random valid data: totals match the truth, raw adds up to the
-aggregate, the three input formats agree, and renaming channels changes nothing.
-"""
+"""Shapley on random valid data."""
+
+# Totals match the truth, raw adds up to the aggregate, the three input formats
+# agree, and renaming channels changes nothing.
 
 import datetime
 
