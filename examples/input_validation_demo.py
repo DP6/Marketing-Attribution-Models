@@ -1,12 +1,10 @@
-"""
-How MAM behaves on a dataset with problems, and the recommended way to run it.
+"""How MAM behaves on a dataset with problems, and the recommended way to run it."""
 
-Builds a simulated session dataset with problems a client export often has, runs
-MAM on it, then checks it with check_data_quality, fixes it step by step and runs
-the models. Prints a Markdown report with the code of each step and its real output:
-
-    python examples/input_validation_demo.py > examples/input_validation_demo.md
-"""
+# Builds a simulated session dataset with problems a client export often has, runs
+# MAM on it, then checks it with check_data_quality, fixes it step by step and runs
+# the models. Prints a Markdown report with the code of each step and its real output:
+#
+#     python examples/input_validation_demo.py > examples/input_validation_demo.md
 
 import datetime
 import inspect

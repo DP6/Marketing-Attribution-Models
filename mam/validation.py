@@ -15,6 +15,7 @@ class InputValidationError(ValueError):
     """Raised when the input data would make MAM fail or return wrong results."""
 
     def __init__(self, problems: List["Problem"]):
+        """Keeps the problems and lists them in the message."""
         self.problems = problems
         super().__init__(
             "The input data has problems that must be fixed before running MAM:\n"
@@ -108,11 +109,10 @@ def build_spec(
     conversion_value_colname: Optional[str] = None,
     columns: Optional[Sequence[str]] = None,
 ) -> InputSpec:
-    """
-    Resolves the column names of a format. In format 2 the time column is optional:
-    without time_till_conv_colname MAM uses 'time_till_end' when the data has it, and
-    no times otherwise (every model runs except Time Decay).
-    """
+    """Resolves the column names of a format."""
+    # In format 2 the time column is optional: without time_till_conv_colname MAM uses
+    # 'time_till_end' when the data has it, and no times otherwise (every model runs
+    # except Time Decay).
     resolved = resolve_format(format_type)
     common = dict(
         format_type=resolved,
@@ -165,12 +165,9 @@ DEFAULT_TIME_COL = "time_till_end"
 
 
 def split_path(path: pl.Expr, separator: str) -> pl.Expr:
-    """
-    Splits a path (or its times) into a list on the separator exactly as given, then
-    removes the spaces around each item: with " > ", "A > B" and " A  >  B " give
-    ["A", "B"], while "A>B" is one channel. A channel name with the separator inside
-    needs another path_separator.
-    """
+    """Splits a path (or its times) on the separator as given and trims each item."""
+    # With " > ", "A > B" and " A  >  B " give ["A", "B"], while "A>B" is one channel.
+    # A channel name with the separator inside needs another path_separator.
     return (
         path.cast(pl.String)
         .str.split(separator)
@@ -487,10 +484,9 @@ def revenue_row_masks(
     revenue: Optional[pl.Series],
     dates: Optional[pl.Series],
 ) -> Tuple[Optional[pl.Series], Optional[pl.Series]]:
-    """
-    Marks rows with revenue and no conversion, as two masks: rows in a journey with
-    no conversion at all, and rows in a journey that converts on another row.
-    """
+    """Marks rows with revenue and no conversion, as two masks."""
+    # Rows in a journey with no conversion at all, and rows in a journey that converts
+    # on another row.
     if flag is None or revenue is None:
         return None, None
     flag = flag.fill_null(False)
@@ -530,22 +526,7 @@ def parse_columns(df: pl.DataFrame, spec: InputSpec) -> ParsedColumns:
     parsed = ParsedColumns()
     errors = parsed.errors
 
-    if spec.is_session and (spec.datetime_col is None or spec.user_id_col is None):
-        errors.append(
-            Problem(
-                "missing_arguments",
-                "datetime_colname and user_id_colname are required for 'session' format.",
-            )
-        )
-    missing = [col for col in spec.required_cols if col not in df.columns]
-    if missing:
-        errors.append(
-            Problem(
-                "missing_columns",
-                f"Missing columns: {', '.join(repr(col) for col in missing)}. "
-                f"Available columns: {', '.join(repr(col) for col in df.columns)}.",
-            )
-        )
+    errors += _argument_problems(df, spec)
     if df.is_empty():
         errors.append(Problem("no_rows", "The input data has no rows."))
         return parsed
@@ -565,23 +546,7 @@ def parse_columns(df: pl.DataFrame, spec: InputSpec) -> ParsedColumns:
             )
         errors += problems
 
-    if spec.is_session:
-        if spec.user_id_col in df.columns:
-            errors += _rows_problem(
-                "null_user",
-                df.get_column(spec.user_id_col).is_null(),
-                f"User '{spec.user_id_col}' has no value on",
-            )
-        if spec.datetime_col in df.columns:
-            parsed.dates, problems = _read_dates(df, spec.datetime_col)
-            errors += problems
-    elif spec.format_type == "journey":
-        if spec.user_id_col in df.columns:
-            errors += _journey_id_problems(df, spec.user_id_col)
-        if spec.time_col in df.columns:
-            errors += _read_times(df, spec.time_col, spec.path_separator, parsed.tokens)
-    elif spec.occurrences_col in df.columns:
-        errors += _read_occurrences(df, spec.occurrences_col)
+    errors += _format_problems(df, spec, parsed)
 
     if spec.format_type != "journey":
         errors += _duplicate_row_problems(df)
@@ -590,6 +555,55 @@ def parse_columns(df: pl.DataFrame, spec: InputSpec) -> ParsedColumns:
     errors += _revenue_problems(df, spec, parsed)
     parsed.warnings += _reserved_channel_problems(parsed.tokens)
     return parsed
+
+
+def _argument_problems(df: pl.DataFrame, spec: InputSpec) -> List[Problem]:
+    """Missing session arguments and columns the format needs but the data lacks."""
+    problems = []
+    if spec.is_session and (spec.datetime_col is None or spec.user_id_col is None):
+        problems.append(
+            Problem(
+                "missing_arguments",
+                "datetime_colname and user_id_colname are required for 'session' format.",
+            )
+        )
+    missing = [col for col in spec.required_cols if col not in df.columns]
+    if missing:
+        problems.append(
+            Problem(
+                "missing_columns",
+                f"Missing columns: {', '.join(repr(col) for col in missing)}. "
+                f"Available columns: {', '.join(repr(col) for col in df.columns)}.",
+            )
+        )
+    return problems
+
+
+def _format_problems(
+    df: pl.DataFrame, spec: InputSpec, parsed: ParsedColumns
+) -> List[Problem]:
+    """Checks the columns one format has (users, dates, ids, times, occurrences)."""
+    problems = []
+    if spec.is_session:
+        if spec.user_id_col in df.columns:
+            problems += _rows_problem(
+                "null_user",
+                df.get_column(spec.user_id_col).is_null(),
+                f"User '{spec.user_id_col}' has no value on",
+            )
+        if spec.datetime_col in df.columns:
+            parsed.dates, date_problems = _read_dates(df, spec.datetime_col)
+            problems += date_problems
+    elif spec.format_type == "journey":
+        if spec.user_id_col in df.columns:
+            problems += _journey_id_problems(df, spec.user_id_col)
+        if spec.time_col in df.columns:
+            problems += _read_times(
+                df, spec.time_col, spec.path_separator, parsed.tokens
+            )
+    elif spec.occurrences_col in df.columns:
+        problems += _read_occurrences(df, spec.occurrences_col)
+    return problems
 
 
 def _journey_id_problems(df: pl.DataFrame, col: str) -> List[Problem]:
@@ -623,11 +637,9 @@ def _duplicate_row_problems(df: pl.DataFrame) -> List[Problem]:
 def _tied_conversion_problems(
     df: pl.DataFrame, spec: InputSpec, parsed: ParsedColumns
 ) -> List[Problem]:
-    """
-    A conversion at the same timestamp as another touch of the user: when journeys are
-    split at conversions, their order decides which journey that touch (and its
-    revenue) belongs to, and the data doesn't have it.
-    """
+    """A conversion at the same timestamp as another touch of the user."""
+    # When journeys are split at conversions, their order decides which journey that
+    # touch (and its revenue) belongs to, and the data doesn't have it.
     if (
         parsed.flag is None
         or parsed.dates is None
@@ -706,8 +718,8 @@ _PACKAGE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def _user_stacklevel() -> int:
-    """stacklevel for warnings.warn called here that points at the first frame outside
-    the mam package: the user's MAM(...) or JAToolbox(...) call."""
+    """Stacklevel for warnings.warn that points at the user's MAM or JAToolbox call."""
+    # That is the first frame outside the mam package.
     level, frame = 1, sys._getframe(1)
     while frame is not None and os.path.abspath(frame.f_code.co_filename).startswith(
         _PACKAGE_DIR

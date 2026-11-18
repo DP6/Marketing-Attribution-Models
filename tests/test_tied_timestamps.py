@@ -1,10 +1,10 @@
-"""Touches of a user at the same timestamp (usually dates without time).
+"""Touches of a user at the same timestamp (usually dates without time)."""
 
-MAM can't know their real order. When a conversion is tied with another touch and journeys
-are split at conversions, that order decides which journey the touch (and its revenue)
-belongs to, so MAM stops. Other ties keep the order of the input rows, in MAM and in
-check_data_quality alike, so the same data always gives the same journeys.
-"""
+# MAM can't know their real order. When a conversion is tied with another touch and
+# journeys are split at conversions, that order decides which journey the touch (and
+# its revenue) belongs to, so MAM stops. Other ties keep the order of the input rows,
+# in MAM and in check_data_quality alike, so the same data always gives the same
+# journeys.
 
 import polars as pl
 import pytest
@@ -21,7 +21,7 @@ SESSION = dict(
 
 
 def sessions(rows):
-    """rows: (user, when, channel, converted[, revenue])"""
+    """Sessions from rows of (user, when, channel, converted[, revenue])."""
     columns = ["user", "when", "channel", "converted", "revenue"][: len(rows[0])]
     return pl.DataFrame([dict(zip(columns, row)) for row in rows])
 
@@ -100,9 +100,9 @@ def test_revenue_on_a_touch_tied_with_the_conversion_stops_mam():
 
 
 def tied_users(users):
-    """Each user: three touches on the same day, in a known order, then a conversion.
-    Rows go round by round (every user's 1st touch, then every 2nd...), so the input is
-    not sorted by user and the sort has to move the tied rows."""
+    """Each user: three touches on the same day, in a known order, then a conversion."""
+    # Rows go round by round (every user's 1st touch, then every 2nd...), so the input
+    # is not sorted by user and the sort has to move the tied rows.
     order = ["C", "A", "B"]
     rows = []
     for step in range(3):

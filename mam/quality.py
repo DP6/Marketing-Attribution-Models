@@ -31,15 +31,13 @@ OUTLIER_JOURNEYS_SCHEMA = {
 
 @dataclass
 class OutlierCut:
-    """
-    Cut-offs for one measure of the journeys and the journeys past them.
+    """Cut-offs for one measure of the journeys and the journeys past them."""
 
-    variable is n_steps (touches), duration (hours from first to last touch) or
-    conversion_value (revenue of a converting journey). Journeys below lower or above
-    upper are outliers; journeys counts them, weighted by occurrences in format 3, and
-    the shares are of all journeys, conversions and revenue. examples are the ids of
-    the farthest ones.
-    """
+    # variable is n_steps (touches), duration (hours from first to last touch) or
+    # conversion_value (revenue of a converting journey). Journeys below lower or above
+    # upper are outliers; journeys counts them, weighted by occurrences in format 3, and
+    # the shares are of all journeys, conversions and revenue. examples are the ids of
+    # the farthest ones.
 
     variable: str
     method: str
@@ -55,13 +53,11 @@ class OutlierCut:
 
 @dataclass
 class DataQualityReport:
-    """
-    Result of check_data_quality. Nothing here changes the input data.
+    """Result of check_data_quality. Nothing here changes the input data."""
 
-    outliers has one OutlierCut per measure the data allows, and outlier_journeys one
-    row per outlier journey: its id (as in MAM), the measures it is an outlier on and
-    its weight. remove_outliers returns the data without those journeys.
-    """
+    # outliers has one OutlierCut per measure the data allows, and outlier_journeys one
+    # row per outlier journey: its id (as in MAM), the measures it is an outlier on and
+    # its weight. remove_outliers returns the data without those journeys.
 
     summary: Dict[str, Any] = field(default_factory=dict)
     errors: List[Problem] = field(default_factory=list)
@@ -86,10 +82,9 @@ class DataQualityReport:
     def remove_outliers(
         self, df: Union[pl.DataFrame, pd.DataFrame]
     ) -> Union[pl.DataFrame, pd.DataFrame]:
-        """
-        Returns the checked data without the outlier journeys: every row of each one
-        goes, and every other row stays as it was. Values are never capped.
-        """
+        """Returns the checked data without the outlier journeys, removed whole."""
+        # Every row of each outlier journey goes, and every other row stays as it was.
+        # Values are never capped.
         frame = pl.from_pandas(df) if isinstance(df, pd.DataFrame) else df
         if self._checked != (frame.height, tuple(frame.columns)):
             raise ValueError(
@@ -103,6 +98,7 @@ class DataQualityReport:
         return df.filter(~self._outlier_rows)
 
     def __str__(self) -> str:
+        """Readable text of the report."""
         lines = ["Summary"]
         lines += [f"  {name}: {value}" for name, value in self.summary.items()]
         lines.append("Expected types")
@@ -350,11 +346,10 @@ def _date_findings(
 def _journeys(
     df: pl.DataFrame, spec: InputSpec, parsed: ParsedColumns
 ) -> Optional[Tuple[pl.DataFrame, pl.Series]]:
-    """
-    One row per journey, with the ids MAM gives them: journey_id, weight, converted,
-    the measures (n_steps, duration, revenue) when the data has them. Also returns
-    the journey of each input row, so outliers can be removed whole.
-    """
+    """One row per journey with the ids MAM gives them, and each input row's journey."""
+    # Columns: journey_id, weight, converted and the measures (n_steps, duration,
+    # revenue) when the data has them. The journey of each input row lets outliers
+    # be removed whole.
     if parsed.tokens is None or parsed.flag is None:
         return None
     flag = parsed.flag.fill_null(False)
@@ -456,8 +451,9 @@ def _weighted_quantile(values: np.ndarray, weights: np.ndarray, q: float) -> flo
 def _cut_offs(
     values: np.ndarray, weights: np.ndarray, method: str, threshold: float
 ) -> Optional[Tuple[float, float]]:
-    """None when the IQR is 0 (half or more of the journeys share one value): the rule
-    would make every other journey an outlier, so it can't separate them."""
+    """None when the IQR is 0, because the rule can't separate the journeys then."""
+    # The IQR is 0 when half or more of the journeys share one value: the rule would
+    # make every other journey an outlier.
     if method == "iqr":
         q1 = _weighted_quantile(values, weights, 0.25)
         q3 = _weighted_quantile(values, weights, 0.75)
@@ -481,11 +477,9 @@ def _outliers(
     method: str,
     threshold: float,
 ) -> Tuple[List[OutlierCut], pl.DataFrame, Optional[pl.Series], List[str]]:
-    """
-    Cut-offs for each measure of the journeys, the journeys past them, a mask of their
-    rows in the input, and the measures with no IQR spread (no cut). Journeys are
-    weighted by their occurrences in format 3.
-    """
+    """Cut-offs and outlier journeys for each measure of the journeys."""
+    # Also returns a mask of the outliers' rows in the input and the measures with no
+    # IQR spread (no cut). Journeys are weighted by their occurrences in format 3.
     empty = pl.DataFrame(schema=OUTLIER_JOURNEYS_SCHEMA)
     found = _journeys(df, spec, parsed)
     if found is None:
@@ -634,20 +628,17 @@ def check_data_quality(
     outlier_method: str = "iqr",
     outlier_threshold: float = 3.0,
 ) -> DataQualityReport:
-    """
-    Reviews a dataset without running MAM and without changing the data.
-
-    Takes the same arguments as MAM. Returns a report with a summary of the dataset,
-    the errors that stop MAM, the warnings it runs with, the data quality findings that
-    only this function reports, the type expected for each column, and the outlier
-    journeys on touches, duration and revenue.
-
-    Outliers are found by interquartile range (outlier_method="iqr": below
-    Q1 - t * IQR or above Q3 + t * IQR; a measure with IQR 0 gets no cut, and the
-    report says so) or by z-score ("zscore": more than t standard
-    deviations from the mean), with t = outlier_threshold. report.remove_outliers(df)
-    returns the data without them.
-    """
+    """Reviews a dataset without running MAM and without changing the data."""
+    # Takes the same arguments as MAM. Returns a report with a summary of the dataset,
+    # the errors that stop MAM, the warnings it runs with, the data quality findings
+    # that only this function reports, the type expected for each column, and the
+    # outlier journeys on touches, duration and revenue.
+    #
+    # Outliers are found by interquartile range (outlier_method="iqr": below
+    # Q1 - t * IQR or above Q3 + t * IQR; a measure with IQR 0 gets no cut, and the
+    # report says so) or by z-score ("zscore": more than t standard deviations from
+    # the mean), with t = outlier_threshold. report.remove_outliers(df) returns the
+    # data without them.
     if outlier_method not in OUTLIER_METHODS:
         raise ValueError(
             f"outlier_method must be one of {OUTLIER_METHODS}, not {outlier_method!r}."

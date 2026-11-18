@@ -1,8 +1,7 @@
-"""
-Inputs that are valid but used to break the preprocessing or change its result
-(C17, C19, C24, C25, I7). Each one runs on the shared random data and must give the
-same results as the plain input.
-"""
+"""Valid inputs that used to break the preprocessing or change its result."""
+
+# Each one runs on the shared random data and must give the same results as the
+# plain input.
 
 import decimal
 
@@ -23,13 +22,16 @@ def results(result):
     return frame.with_columns(pl.col("channels").cast(pl.String)).sort("channels")
 
 
-def same_results(df, expected_df, fmt, models=MODELS, **kwargs):
-    for name, run in models.items():
-        assert_frame_equal(
-            results(run(build(df, fmt, **kwargs))),
-            results(run(build(expected_df, fmt))),
-            check_exact=False,
-        ), name
+def same_results(df, expected_df, fmt, models=None, **kwargs):
+    for name, run in (models or MODELS).items():
+        try:
+            assert_frame_equal(
+                results(run(build(df, fmt, **kwargs))),
+                results(run(build(expected_df, fmt))),
+                check_exact=False,
+            )
+        except AssertionError as error:
+            raise AssertionError(f"{name}: {error}") from error
 
 
 # C17: format 1 kept whole seconds only

@@ -114,7 +114,7 @@ def test_jatoolbox_stops_on_the_same_errors():
         args = {**ARGS["journey"], "channels_col": "path"}
         args.pop("channels_colname")
         args.pop("conversion_value_colname")
-        JAToolbox(df, **args)
+        JAToolbox(df, **args)  # pylint: disable=unexpected-keyword-arg
 
 
 @pytest.mark.parametrize("seed", range(3))

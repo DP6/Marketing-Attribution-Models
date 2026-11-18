@@ -1,7 +1,6 @@
-"""Spaces around channel names don't create new channels (I11, I20, I21).
+"""Spaces around channel names don't create new channels."""
 
-Paths split on path_separator exactly as given; each channel is then trimmed.
-"""
+# Paths split on path_separator exactly as given; each channel is then trimmed.
 
 import numpy as np
 import polars as pl

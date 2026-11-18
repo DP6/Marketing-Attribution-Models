@@ -1,7 +1,7 @@
-"""
-Injects one kind of bad input at random rows of clean data and checks that it is
-reported with the right row count, and that clean data reports nothing.
-"""
+"""Bad input injected at random rows is reported with the right row count."""
+
+# Each test injects one kind of bad input at random rows of clean data; clean data
+# reports nothing.
 
 import datetime
 from dataclasses import dataclass, field

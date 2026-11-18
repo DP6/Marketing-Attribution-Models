@@ -1,9 +1,7 @@
-"""
-Outliers in check_data_quality (#109): journeys far from the rest on steps, duration
-or revenue are found, listed and can be removed whole.
+"""Outlier journeys in check_data_quality are found, listed and can be removed whole."""
 
-The data is the shared random base with outlier journeys planted at random users.
-"""
+# Outliers are journeys far from the rest on steps, duration or revenue (#109). The
+# data is the shared random base with outlier journeys planted at random users.
 
 import datetime
 
@@ -28,10 +26,8 @@ VARIABLES = ["n_steps", "duration", "conversion_value"]
 
 
 def planted(seed, k=None):
-    """
-    Sessions with k journeys planted far out on each variable, on different users:
-    40 extra touches, a first touch 3000 hours earlier, revenue 1000 times higher.
-    """
+    """Sessions with k journeys planted far out on each variable, on different users."""
+    # 40 extra touches, a first touch 3000 hours earlier, revenue 1000 times higher.
     rng = np.random.default_rng(seed)
     sessions = clean_sessions(rng)
     k = int(rng.integers(1, 6)) if k is None else k
@@ -386,8 +382,8 @@ def mostly_single_touch():
 
 
 def test_iqr_does_not_cut_a_measure_without_spread():
-    """With Q1 = Q3 every journey off that value would be an outlier: the rule can't
-    separate them, so that measure gets no cut and nothing is removed for it."""
+    """With Q1 = Q3 the measure gets no cut and nothing is removed for it."""
+    # Every journey off that value would be an outlier, so the rule can't separate them.
     df = mostly_single_touch()
 
     report = check_data_quality(df, "journey", "path", "converted")
