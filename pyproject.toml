@@ -40,3 +40,7 @@ include = ["mam*"]
 [tool.semantic_release.branches.main]
 match = "master"
 
+
+[tool.pytest.ini_options]
+# Some test modules import helpers from others (from tests.x import ...)
+pythonpath = ["."]
